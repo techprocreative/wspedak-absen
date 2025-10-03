@@ -10,13 +10,12 @@ Solusi one-click deployment yang mengubah PC Windows 10 Anda menjadi server atte
 
 **Opsi A: Download dari Repository**
 Download file installer dari:
-- Repository: `scripts/deploy/one-click-deploy.bat` (rekomendasi)
+- Repository: `scripts/deploy/windows-compose.bat` (rekomendasi untuk pengguna Docker Desktop)
 - Atau download langsung dari release page
 
 **Opsi B: Gunakan File Lokal**
-Jika Anda sudah memiliki file project di folder:
-- Gunakan file `local-deploy.bat` (khusus untuk deployment dari folder lokal)
-- Atau jalankan `windows-one-click-deploy.bat` langsung dari folder project
+Jika Anda sudah memiliki file project di folder dan Docker Desktop sudah terpasang:
+- Jalankan `scripts/deploy/windows-compose.bat` langsung dari folder project
 
 ### Langkah 2: Konfigurasi Sebelum Instalasi
 1. Jalankan installer yang telah Anda download
