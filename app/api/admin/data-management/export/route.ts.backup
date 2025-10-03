@@ -1,0 +1,278 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { DataExporter, ExportConfig } from '@/lib/data-export'
+
+// Mock authentication check
+// In a real implementation, this would use proper authentication
+async function checkAuth() {
+  // Mock implementation - always return true for demo
+  return true
+}
+
+// POST /api/admin/data-management/export - Start data export
+export async function POST(request: NextRequest) {
+  try {
+    // Check authentication
+    const isAuthenticated = await checkAuth()
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Parse request body
+    const body = await request.json()
+    const { exportType, format, fields, filters, filename } = body
+
+    if (!exportType || !format || !fields) {
+      return NextResponse.json(
+        { error: 'Missing required parameters' },
+        { status: 400 }
+      )
+    }
+
+    // Validate export type
+    if (!['employees', 'attendance', 'schedules'].includes(exportType)) {
+      return NextResponse.json(
+        { error: 'Invalid export type' },
+        { status: 400 }
+      )
+    }
+
+    // Validate format
+    if (!['csv', 'excel', 'pdf', 'json'].includes(format)) {
+      return NextResponse.json(
+        { error: 'Invalid export format' },
+        { status: 400 }
+      )
+    }
+
+    // Create export configuration
+    const exportConfig: ExportConfig = {
+      format: format as 'csv' | 'excel' | 'pdf' | 'json',
+      fields,
+      filters,
+      filename,
+      includeHeader: true,
+      encoding: 'utf-8',
+      delimiter: ','
+    }
+
+    // Create data exporter
+    const exporter = new DataExporter(exportConfig)
+
+    // Get mock data based on export type
+    let data: any[] = []
+    switch (exportType) {
+      case 'employees':
+        data = getMockEmployeeData()
+        break
+      case 'attendance':
+        data = getMockAttendanceData()
+        break
+      case 'schedules':
+        data = getMockScheduleData()
+        break
+    }
+
+    // Export data
+    const result = await exporter.exportData(data)
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Export failed', details: result.errors },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        filename: result.filename,
+        downloadUrl: result.downloadUrl,
+        totalRecords: result.totalRecords,
+        exportedRecords: result.exportedRecords,
+        fileSize: result.fileSize,
+        errors: result.errors,
+        warnings: result.warnings
+      }
+    })
+  } catch (error) {
+    console.error('Data export error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// GET /api/admin/data-management/export - Get export templates
+export async function GET(request: NextRequest) {
+  try {
+    // Check authentication
+    const isAuthenticated = await checkAuth()
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type') as string
+    const format = searchParams.get('format') as string || 'csv'
+
+    if (!type || !['employees', 'attendance', 'schedules'].includes(type)) {
+      return NextResponse.json(
+        { error: 'Invalid export type' },
+        { status: 400 }
+      )
+    }
+
+    // Generate template
+    const template = DataExporter.createTemplate(
+      type as 'employees' | 'attendance' | 'schedules',
+      format as 'csv' | 'excel'
+    )
+
+    // Return template as downloadable file
+    const filename = `${type}-template.${format}`
+    
+    return new NextResponse(template, {
+      headers: {
+        'Content-Type': format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="${filename}"`
+      }
+    })
+  } catch (error) {
+    console.error('Template generation error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// Mock data functions
+function getMockEmployeeData(): any[] {
+  return [
+    {
+      id: '1',
+      name: 'John Doe',
+      email: 'john@example.com',
+      employeeId: 'EMP001',
+      department: 'IT',
+      role: 'Developer',
+      phone: '+1234567890',
+      address: '123 Main St',
+      startDate: '2023-01-01',
+      salary: 75000,
+      manager: 'Jane Smith',
+      status: 'active'
+    },
+    {
+      id: '2',
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      employeeId: 'EMP002',
+      department: 'HR',
+      role: 'Manager',
+      phone: '+1234567891',
+      address: '456 Oak Ave',
+      startDate: '2022-06-15',
+      salary: 85000,
+      manager: '',
+      status: 'active'
+    },
+    {
+      id: '3',
+      name: 'Bob Johnson',
+      email: 'bob@example.com',
+      employeeId: 'EMP003',
+      department: 'Finance',
+      role: 'Accountant',
+      phone: '+1234567892',
+      address: '789 Pine Rd',
+      startDate: '2023-03-10',
+      salary: 70000,
+      manager: 'Jane Smith',
+      status: 'active'
+    }
+  ]
+}
+
+function getMockAttendanceData(): any[] {
+  return [
+    {
+      id: '1',
+      employeeId: 'EMP001',
+      date: '2025-01-01',
+      type: 'check-in',
+      timestamp: '2025-01-01T08:00:00Z',
+      location: 'Office',
+      notes: '',
+      approvedBy: '',
+      status: 'approved'
+    },
+    {
+      id: '2',
+      employeeId: 'EMP001',
+      date: '2025-01-01',
+      type: 'check-out',
+      timestamp: '2025-01-01T17:00:00Z',
+      location: 'Office',
+      notes: '',
+      approvedBy: '',
+      status: 'approved'
+    },
+    {
+      id: '3',
+      employeeId: 'EMP002',
+      date: '2025-01-01',
+      type: 'check-in',
+      timestamp: '2025-01-01T08:30:00Z',
+      location: 'Office',
+      notes: '',
+      approvedBy: '',
+      status: 'approved'
+    }
+  ]
+}
+
+function getMockScheduleData(): any[] {
+  return [
+    {
+      id: '1',
+      employeeId: 'EMP001',
+      startDate: '2025-01-01',
+      endDate: '2025-01-31',
+      shiftType: 'Regular',
+      location: 'Office',
+      notes: '',
+      approvedBy: '',
+      status: 'active'
+    },
+    {
+      id: '2',
+      employeeId: 'EMP002',
+      startDate: '2025-01-01',
+      endDate: '2025-01-31',
+      shiftType: 'Regular',
+      location: 'Office',
+      notes: '',
+      approvedBy: '',
+      status: 'active'
+    },
+    {
+      id: '3',
+      employeeId: 'EMP003',
+      startDate: '2025-01-01',
+      endDate: '2025-01-31',
+      shiftType: 'Night',
+      location: 'Remote',
+      notes: 'Night shift for January',
+      approvedBy: 'Jane Smith',
+      status: 'active'
+    }
+  ]
+}

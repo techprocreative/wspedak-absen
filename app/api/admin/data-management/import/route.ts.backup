@@ -1,0 +1,467 @@
+import { NextRequest, NextResponse } from 'next/server'
+import Papa from 'papaparse'
+import * as XLSX from 'xlsx'
+import { z } from 'zod'
+import { createServerSupabaseClient, checkAdminAuth } from '@/lib/supabase-server'
+
+export const dynamic = 'force-dynamic'
+
+// File size limits
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_IMPORT_ROWS = 10000 // Safety limit
+
+// Validation schemas
+const EmployeeImportSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1),
+  role: z.enum(['employee', 'admin', 'hr', 'manager']).default('employee'),
+  department: z.string().optional(),
+  position: z.string().optional(),
+  employee_id: z.string().optional(),
+  phone: z.string().optional(),
+  start_date: z.string().optional()
+})
+
+const AttendanceImportSchema = z.object({
+  user_id: z.string().uuid().optional(),
+  email: z.string().email().optional(),
+  date: z.string(),
+  clock_in: z.string().optional(),
+  clock_out: z.string().optional(),
+  status: z.enum(['present', 'absent', 'late', 'early_leave', 'on_leave']).default('present'),
+  notes: z.string().optional()
+})
+
+// POST /api/admin/data-management/import - Import data
+export async function POST(request: NextRequest) {
+  try {
+    // Check authentication
+    const authResult = await checkAdminAuth()
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (!authResult.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden. Admin access required.' }, { status: 403 })
+    }
+
+    // Parse form data
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const importType = formData.get('importType') as string
+    const mode = formData.get('mode') as string || 'insert' // insert, update, upsert
+
+    if (!file) {
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    }
+
+    if (!importType) {
+      return NextResponse.json({ error: 'Import type is required' }, { status: 400 })
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({
+        error: `File too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum is ${MAX_FILE_SIZE / 1024 / 1024}MB`
+      }, { status: 413 })
+    }
+
+    // Validate file type
+    const filename = file.name
+    const extension = filename.split('.').pop()?.toLowerCase()
+    
+    if (!extension || !['csv', 'xlsx', 'xls', 'json'].includes(extension)) {
+      return NextResponse.json({
+        error: 'Unsupported file format. Supported: CSV, Excel, JSON'
+      }, { status: 400 })
+    }
+
+    // Read file content
+    const fileContent = await file.text()
+    let parsedData: any[] = []
+
+    // Parse based on file type
+    try {
+      if (extension === 'csv') {
+        const parseResult = Papa.parse(fileContent, {
+          header: true,
+          skipEmptyLines: true,
+          dynamicTyping: true
+        })
+        parsedData = parseResult.data
+      } else if (extension === 'xlsx' || extension === 'xls') {
+        const buffer = await file.arrayBuffer()
+        const workbook = XLSX.read(buffer, { type: 'buffer' })
+        const sheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[sheetName]
+        parsedData = XLSX.utils.sheet_to_json(worksheet)
+      } else if (extension === 'json') {
+        parsedData = JSON.parse(fileContent)
+        if (!Array.isArray(parsedData)) {
+          return NextResponse.json({ error: 'JSON must be an array of objects' }, { status: 400 })
+        }
+      }
+    } catch (parseError: any) {
+      return NextResponse.json({
+        error: 'Failed to parse file',
+        details: parseError.message
+      }, { status: 400 })
+    }
+
+    if (parsedData.length === 0) {
+      return NextResponse.json({ error: 'No data found in file' }, { status: 400 })
+    }
+
+    if (parsedData.length > MAX_IMPORT_ROWS) {
+      return NextResponse.json({
+        error: `Too many rows (${parsedData.length}). Maximum is ${MAX_IMPORT_ROWS}`
+      }, { status: 413 })
+    }
+
+    // Validate and import based on type
+    const supabase = createServerSupabaseClient()
+    let validRows: any[] = []
+    let invalidRows: any[] = []
+    const errors: string[] = []
+    const warnings: string[] = []
+
+    // Select schema and table based on import type
+    let schema: z.ZodSchema
+    let tableName: string
+
+    switch (importType) {
+      case 'employees':
+      case 'users':
+        schema = EmployeeImportSchema
+        tableName = 'users'
+        break
+      case 'attendance':
+      case 'daily_attendance_records':
+        schema = AttendanceImportSchema
+        tableName = 'daily_attendance_records'
+        break
+      default:
+        return NextResponse.json({ error: 'Invalid import type' }, { status: 400 })
+    }
+
+    // Validate each row
+    parsedData.forEach((row, index) => {
+      const result = schema.safeParse(row)
+      if (result.success) {
+        validRows.push(result.data)
+      } else {
+        invalidRows.push({ row: index + 1, data: row, errors: result.error.issues })
+        errors.push(`Row ${index + 1}: ${result.error.issues.map(i => i.message).join(', ')}`)
+      }
+    })
+
+    // Import valid rows
+    let insertedCount = 0
+    let updatedCount = 0
+    let skippedCount = 0
+
+    if (validRows.length > 0) {
+      try {
+        if (importType === 'employees' || importType === 'users') {
+          // Import employees
+          for (const row of validRows) {
+            // Check if user already exists
+            const { data: existingUser } = await supabase
+              .from('users')
+              .select('id')
+              .eq('email', row.email)
+              .single()
+
+            if (existingUser) {
+              if (mode === 'update' || mode === 'upsert') {
+                const { error: updateError } = await supabase
+                  .from('users')
+                  .update(row)
+                  .eq('email', row.email)
+                
+                if (!updateError) {
+                  updatedCount++
+                } else {
+                  warnings.push(`Failed to update ${row.email}: ${updateError.message}`)
+                  skippedCount++
+                }
+              } else {
+                warnings.push(`User ${row.email} already exists, skipped`)
+                skippedCount++
+              }
+            } else {
+              if (mode === 'insert' || mode === 'upsert') {
+                // Need to create auth user first, then user record
+                // For now, skip auth creation and just note it
+                warnings.push(`User ${row.email} needs auth account created first`)
+                skippedCount++
+              }
+            }
+          }
+        } else if (importType === 'attendance' || importType === 'daily_attendance_records') {
+          // Import attendance records
+          for (const row of validRows) {
+            // If email provided, get user_id
+            let userId = row.user_id
+            if (!userId && row.email) {
+              const { data: user } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', row.email)
+                .single()
+              
+              if (user) {
+                userId = user.id
+              } else {
+                warnings.push(`User with email ${row.email} not found`)
+                skippedCount++
+                continue
+              }
+            }
+
+            if (!userId) {
+              warnings.push(`No user_id or email provided for attendance record`)
+              skippedCount++
+              continue
+            }
+
+            // Check if attendance record exists
+            const { data: existingRecord } = await supabase
+              .from('daily_attendance_records')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('date', row.date)
+              .single()
+
+            const recordData = {
+              user_id: userId,
+              date: row.date,
+              clock_in: row.clock_in,
+              clock_out: row.clock_out,
+              status: row.status,
+              notes: row.notes
+            }
+
+            if (existingRecord) {
+              if (mode === 'update' || mode === 'upsert') {
+                const { error: updateError } = await supabase
+                  .from('daily_attendance_records')
+                  .update(recordData)
+                  .eq('user_id', userId)
+                  .eq('date', row.date)
+                
+                if (!updateError) {
+                  updatedCount++
+                } else {
+                  warnings.push(`Failed to update attendance for ${row.date}: ${updateError.message}`)
+                  skippedCount++
+                }
+              } else {
+                warnings.push(`Attendance record for ${row.date} already exists, skipped`)
+                skippedCount++
+              }
+            } else {
+              if (mode === 'insert' || mode === 'upsert') {
+                const { error: insertError } = await supabase
+                  .from('daily_attendance_records')
+                  .insert(recordData)
+                
+                if (!insertError) {
+                  insertedCount++
+                } else {
+                  warnings.push(`Failed to insert attendance for ${row.date}: ${insertError.message}`)
+                  skippedCount++
+                }
+              }
+            }
+          }
+        }
+      } catch (importError: any) {
+        console.error('Import error:', importError)
+        errors.push(`Import failed: ${importError.message}`)
+      }
+    }
+
+    // Log import activity
+    try {
+      await supabase.from('audit_logs').insert({
+        user_id: authResult.userId,
+        action: 'DATA_IMPORT',
+        resource: importType,
+        details: {
+          filename: file.name,
+          totalRows: parsedData.length,
+          validRows: validRows.length,
+          invalidRows: invalidRows.length,
+          insertedCount,
+          updatedCount,
+          skippedCount,
+          mode
+        }
+      })
+    } catch (auditError) {
+      console.error('Audit log error:', auditError)
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        totalRows: parsedData.length,
+        validRows: validRows.length,
+        invalidRows: invalidRows.length,
+        insertedCount,
+        updatedCount,
+        skippedCount,
+        errors,
+        warnings
+      }
+    })
+  } catch (error: any) {
+    console.error('Import error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error', details: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+// GET /api/admin/data-management/import - Get import templates and history
+export async function GET(request: NextRequest) {
+  try {
+    // Check authentication
+    const authResult = await checkAdminAuth()
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (!authResult.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const action = searchParams.get('action')
+    const type = searchParams.get('type')
+    const format = searchParams.get('format') || 'csv'
+
+    if (action === 'template') {
+      // Generate import template
+      let template: any[]
+      let headers: string[]
+
+      switch (type) {
+        case 'employees':
+        case 'users':
+          headers = ['email', 'name', 'role', 'department', 'position', 'employee_id', 'phone', 'start_date']
+          template = [{
+            email: 'john.doe@example.com',
+            name: 'John Doe',
+            role: 'employee',
+            department: 'IT',
+            position: 'Developer',
+            employee_id: 'EMP001',
+            phone: '+1234567890',
+            start_date: '2024-01-01'
+          }]
+          break
+        case 'attendance':
+        case 'daily_attendance_records':
+          headers = ['email', 'date', 'clock_in', 'clock_out', 'status', 'notes']
+          template = [{
+            email: 'john.doe@example.com',
+            date: '2024-01-01',
+            clock_in: '08:00:00',
+            clock_out: '17:00:00',
+            status: 'present',
+            notes: ''
+          }]
+          break
+        default:
+          return NextResponse.json({ error: 'Invalid import type' }, { status: 400 })
+      }
+
+      // Generate template file
+      let fileContent: string | Buffer
+      let contentType: string
+      let extension: string
+
+      if (format === 'csv') {
+        fileContent = Papa.unparse(template, { header: true })
+        contentType = 'text/csv;charset=utf-8;'
+        extension = 'csv'
+      } else if (format === 'excel' || format === 'xlsx') {
+        const ws = XLSX.utils.json_to_sheet(template)
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, 'Template')
+        fileContent = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+        contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        extension = 'xlsx'
+      } else {
+        fileContent = JSON.stringify(template, null, 2)
+        contentType = 'application/json;charset=utf-8;'
+        extension = 'json'
+      }
+
+      const filename = `import-template-${type}.${extension}`
+
+      return new NextResponse(fileContent, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${filename}"`
+        }
+      })
+    }
+
+    if (action === 'history') {
+      // Get import history from audit logs
+      const supabase = createServerSupabaseClient()
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('action', 'DATA_IMPORT')
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      if (error) {
+        return NextResponse.json({
+          error: 'Failed to fetch import history',
+          details: error.message
+        }, { status: 500 })
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: data || []
+      })
+    }
+
+    // Default: return import information
+    return NextResponse.json({
+      success: true,
+      importTypes: [
+        {
+          id: 'users',
+          name: 'Employees',
+          requiredFields: ['email', 'name'],
+          optionalFields: ['role', 'department', 'position', 'employee_id', 'phone', 'start_date']
+        },
+        {
+          id: 'daily_attendance_records',
+          name: 'Attendance',
+          requiredFields: ['email OR user_id', 'date'],
+          optionalFields: ['clock_in', 'clock_out', 'status', 'notes']
+        }
+      ],
+      formats: ['csv', 'excel', 'json'],
+      limits: {
+        maxFileSize: MAX_FILE_SIZE,
+        maxRows: MAX_IMPORT_ROWS
+      }
+    })
+  } catch (error: any) {
+    console.error('Import info error:', error)
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error.message
+    }, { status: 500 })
+  }
+}
