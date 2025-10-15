@@ -7,8 +7,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { serverDbManager } from '@/lib/server-db'
+import { findBestMatch, assessMatchQuality } from '@/lib/face-matching'
+import { logger } from '@/lib/logger'
 
-import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 type ActionType = 'check-in' | 'break-start' | 'break-end' | 'check-out'
@@ -45,28 +46,58 @@ export async function POST(request: NextRequest) {
 
     // Identify user
     const users = await serverDbManager.getUsers()
-    const usersWithFace = users.filter(u => u.faceDescriptor)
+    const allEmbeddings = await Promise.all(
+      users.map(async (user) => {
+        const embeddings = await serverDbManager.getFaceEmbeddings(user.id)
+        return embeddings.map(emb => ({
+          userId: user.id,
+          embedding: emb.embedding,
+          user: user
+        }))
+      })
+    )
 
-    let matchedUser = null
-    let bestDistance = Infinity
-    const MATCH_THRESHOLD = 0.6
+    const knownEmbeddings = allEmbeddings.flat().filter(e => e.embedding)
 
-    for (const user of usersWithFace) {
-      const userDescriptor = JSON.parse(user.faceDescriptor as string)
-      const distance = euclideanDistance(descriptor, userDescriptor)
-      
-      if (distance < bestDistance && distance < MATCH_THRESHOLD) {
-        bestDistance = distance
-        matchedUser = user
-      }
+    if (knownEmbeddings.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No enrolled faces found' },
+        { status: 404 }
+      )
     }
 
-    if (!matchedUser) {
+    // Find best matching user using cosine similarity
+    const bestMatch = findBestMatch(
+      descriptor,
+      knownEmbeddings.map(e => ({
+        userId: e.userId,
+        embedding: e.embedding
+      }))
+    )
+
+    if (!bestMatch) {
       return NextResponse.json(
         { success: false, error: 'Face not recognized' },
         { status: 404 }
       )
     }
+
+    const matchedUser = knownEmbeddings.find(e => e.userId === bestMatch.userId)?.user
+    if (!matchedUser) {
+      return NextResponse.json(
+        { success: false, error: 'User data not found' },
+        { status: 404 }
+      )
+    }
+
+    // Assess match quality
+    const matchQuality = assessMatchQuality(bestMatch)
+    logger.info('Face matched for action', {
+      userId: matchedUser.id,
+      action,
+      confidence: bestMatch.confidence,
+      quality: matchQuality.quality
+    })
 
     // Create attendance record
     const attendanceRecord = {
@@ -108,7 +139,9 @@ export async function POST(request: NextRequest) {
       action: `attendance_${action}`,
       details: `${getActionLabel(action)} via face recognition`,
       metadata: {
-        confidence: 1 - bestDistance,
+        confidence: bestMatch.confidence,
+        similarity: bestMatch.similarity,
+        matchQuality: matchQuality.quality,
         location,
         timestamp
       }
@@ -122,7 +155,8 @@ export async function POST(request: NextRequest) {
         userName: matchedUser.name,
         action,
         timestamp,
-        confidence: 1 - bestDistance
+        confidence: bestMatch.confidence,
+        matchQuality: matchQuality.quality
       }
     })
 
@@ -137,19 +171,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-function euclideanDistance(a: number[], b: number[]): number {
-  if (a.length !== b.length) {
-    throw new Error('Vectors must have the same length')
-  }
-  
-  let sum = 0
-  for (let i = 0; i < a.length; i++) {
-    sum += Math.pow(a[i] - b[i], 2)
-  }
-  
-  return Math.sqrt(sum)
 }
 
 function getActionLabel(action: ActionType): string {

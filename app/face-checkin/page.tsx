@@ -712,7 +712,9 @@ export default function FaceCheckinPage() {
                     ref={videoRef} 
                     autoPlay 
                     playsInline
-                    className="w-full h-auto"
+                    muted
+                    className="w-full h-auto transform scale-x-[-1]"
+                    style={{ transform: 'scaleX(-1)' }}
                   />
                   <div className="absolute top-4 right-4 flex flex-col gap-2">
                     {location && (

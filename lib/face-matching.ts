@@ -1,202 +1,263 @@
 /**
- * Face Matching Engine
- * Matches face descriptors against stored embeddings
+ * Face Matching Library
+ * Provides robust face matching algorithms with cosine similarity
  */
 
-import { serverDbManager } from './server-db'
+import { logger } from '@/lib/logger'
 
-import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export interface FaceMatchResult {
   userId: string
-  userName?: string
   confidence: number
-  matchedEmbeddingId: string
+  distance: number
+  similarity: number
 }
 
-export class FaceMatcher {
-  // Confidence threshold for face matching (0-1)
-  private static readonly MATCH_THRESHOLD = 0.6
-  
-  // Maximum distance for face matching (lower is better)
-  private static readonly MAX_DISTANCE = 0.6
-  
-  /**
-   * Calculate Euclidean distance between two descriptors
-   */
-  private static euclideanDistance(descriptor1: Float32Array | number[], descriptor2: number[]): number {
-    if (descriptor1.length !== descriptor2.length) {
-      throw new Error('Descriptor dimensions do not match')
-    }
-    
-    let sum = 0
-    for (let i = 0; i < descriptor1.length; i++) {
-      const diff = descriptor1[i] - descriptor2[i]
-      sum += diff * diff
-    }
-    
-    return Math.sqrt(sum)
+export interface MatchingConditions {
+  lighting?: number
+  imageQuality?: number
+  faceSize?: number
+}
+
+/**
+ * Calculate cosine similarity between two face embeddings
+ * Returns value between 0 and 1 (higher is more similar)
+ */
+export function calculateCosineSimilarity(
+  embedding1: number[] | Float32Array,
+  embedding2: number[] | Float32Array
+): number {
+  if (embedding1.length !== embedding2.length) {
+    throw new Error('Embeddings must have the same length')
   }
-  
-  /**
-   * Match a face descriptor against all stored embeddings
-   * Returns the best matching user ID and confidence score
-   */
-  static async matchFace(
-    descriptor: Float32Array | number[]
-  ): Promise<FaceMatchResult | null> {
-    try {
-      // Validate descriptor
-      if (!descriptor || descriptor.length !== 128) {
-        logger.error('Invalid descriptor: must be 128 dimensions', new Error())
-        return null
-      }
-      
-      // Get all active face embeddings
-      const allEmbeddings = await serverDbManager.getAllFaceEmbeddings()
-      
-      if (allEmbeddings.length === 0) {
-        logger.info('No face embeddings found in database')
-        return null
-      }
-      
-      logger.info('Matching face against ${allEmbeddings.length} embeddings')
-      
-      // Find best match
-      let bestMatch: FaceMatchResult | null = null
-      let bestDistance = Infinity
-      
-      for (const embedding of allEmbeddings) {
-        if (!embedding.embedding || embedding.embedding.length !== 128) {
-          logger.warn('Skipping invalid embedding ${embedding.id}')
-          continue
-        }
-        
-        const distance = this.euclideanDistance(descriptor, embedding.embedding)
-        
-        if (distance < bestDistance) {
-          bestDistance = distance
-          const confidence = 1 - distance // Convert distance to confidence (0-1)
-          
-          bestMatch = {
-            userId: embedding.userId,
-            confidence,
-            matchedEmbeddingId: embedding.id
-          }
-        }
-      }
-      
-      // Check if best match meets threshold
-      if (bestMatch && bestMatch.confidence >= this.MATCH_THRESHOLD && bestDistance <= this.MAX_DISTANCE) {
-        // Get user info
-        const user = await serverDbManager.getUser(bestMatch.userId)
-        if (user) {
-          bestMatch.userName = user.name
-        }
-        
-        logger.info('Match found: ${bestMatch.userName} (confidence: ${(bestMatch.confidence * 100).toFixed(2)}%)')
-        return bestMatch
-      }
-      
-      logger.info('No match found. Best distance: ${bestDistance}, confidence: ${bestMatch?.confidence}')
-      return null
-    } catch (error) {
-      logger.error('Error matching face', error as Error)
-      return null
-    }
+
+  let dotProduct = 0
+  let norm1 = 0
+  let norm2 = 0
+
+  for (let i = 0; i < embedding1.length; i++) {
+    dotProduct += embedding1[i] * embedding2[i]
+    norm1 += embedding1[i] * embedding1[i]
+    norm2 += embedding2[i] * embedding2[i]
   }
-  
-  /**
-   * Verify if a face matches a specific user
-   * Used for verification scenarios (1:1 matching)
-   */
-  static async verifyFace(
-    descriptor: Float32Array | number[],
+
+  if (norm1 === 0 || norm2 === 0) {
+    return 0
+  }
+
+  const similarity = dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2))
+
+  // Convert from [-1, 1] to [0, 1] scale
+  return (similarity + 1) / 2
+}
+
+/**
+ * Calculate Euclidean distance between two face embeddings
+ * Returns distance value (lower is more similar)
+ */
+export function calculateEuclideanDistance(
+  embedding1: number[] | Float32Array,
+  embedding2: number[] | Float32Array
+): number {
+  if (embedding1.length !== embedding2.length) {
+    throw new Error('Embeddings must have the same length')
+  }
+
+  let sum = 0
+  for (let i = 0; i < embedding1.length; i++) {
+    const diff = embedding1[i] - embedding2[i]
+    sum += diff * diff
+  }
+
+  return Math.sqrt(sum)
+}
+
+/**
+ * Get adaptive threshold based on image quality conditions
+ */
+export function getAdaptiveThreshold(conditions: MatchingConditions = {}): number {
+  let baseThreshold = 0.65 // Base threshold for cosine similarity
+
+  const { lighting = 1, imageQuality = 1, faceSize = 150 } = conditions
+
+  // Adjust threshold based on conditions
+  if (lighting < 0.5) {
+    baseThreshold -= 0.1
+    logger.info('Low lighting detected, lowering threshold')
+  }
+
+  if (imageQuality < 0.6) {
+    baseThreshold -= 0.05
+    logger.info('Low image quality detected, lowering threshold')
+  }
+
+  if (faceSize < 100) {
+    baseThreshold -= 0.05
+    logger.info('Small face size detected, lowering threshold')
+  }
+
+  // Ensure threshold stays within reasonable bounds
+  return Math.max(0.45, Math.min(0.85, baseThreshold))
+}
+
+/**
+ * Match a face embedding against known embeddings
+ * Returns matches sorted by confidence (highest first)
+ */
+export function matchFaceEmbedding(
+  targetEmbedding: number[] | Float32Array,
+  knownEmbeddings: Array<{
     userId: string
-  ): Promise<{ matched: boolean; confidence: number; details?: string }> {
+    embedding: number[] | Float32Array
+  }>,
+  conditions: MatchingConditions = {}
+): FaceMatchResult[] {
+  const threshold = getAdaptiveThreshold(conditions)
+  const matches: FaceMatchResult[] = []
+
+  for (const known of knownEmbeddings) {
     try {
-      // Validate descriptor
-      if (!descriptor || descriptor.length !== 128) {
-        return { 
-          matched: false, 
-          confidence: 0, 
-          details: 'Invalid descriptor dimensions' 
-        }
-      }
-      
-      // Get user's embeddings
-      const userEmbeddings = await serverDbManager.getFaceEmbeddings(userId)
-      
-      if (userEmbeddings.length === 0) {
-        return { 
-          matched: false, 
-          confidence: 0, 
-          details: 'No face embeddings found for user' 
-        }
-      }
-      
-      logger.info('Verifying face against ${userEmbeddings.length} embeddings for user ${userId}')
-      
-      // Check against all user's embeddings (take best match)
-      let maxConfidence = 0
-      let minDistance = Infinity
-      
-      for (const embedding of userEmbeddings) {
-        if (!embedding.embedding || embedding.embedding.length !== 128) {
-          continue
-        }
-        
-        const distance = this.euclideanDistance(descriptor, embedding.embedding)
-        const confidence = 1 - distance
-        
-        if (distance < minDistance) {
-          minDistance = distance
-          maxConfidence = confidence
-        }
-      }
-      
-      const matched = maxConfidence >= this.MATCH_THRESHOLD && minDistance <= this.MAX_DISTANCE
-      
-      logger.debug('Verification result', { matched, confidence: (maxConfidence * 100).toFixed(2) });
-      
-      return {
-        matched,
-        confidence: maxConfidence,
-        details: matched 
-          ? `Face verified with ${(maxConfidence * 100).toFixed(2)}% confidence`
-          : `Confidence too low: ${(maxConfidence * 100).toFixed(2)}%`
+      // Calculate both similarity and distance
+      const similarity = calculateCosineSimilarity(targetEmbedding, known.embedding)
+      const distance = calculateEuclideanDistance(targetEmbedding, known.embedding)
+
+      // Use similarity as primary metric (cosine similarity)
+      const confidence = similarity
+
+      if (confidence >= threshold) {
+        matches.push({
+          userId: known.userId,
+          confidence,
+          distance,
+          similarity
+        })
       }
     } catch (error) {
-      logger.error('Error verifying face', error as Error)
-      return { 
-        matched: false, 
-        confidence: 0, 
-        details: 'Error during verification' 
-      }
+      logger.error(`Error matching face for user ${known.userId}`, error as Error)
     }
   }
-  
-  /**
-   * Get match threshold (for UI display)
-   */
-  static getMatchThreshold(): number {
-    return this.MATCH_THRESHOLD
-  }
-  
-  /**
-   * Check if confidence score is good enough
-   */
-  static isConfidenceAcceptable(confidence: number): boolean {
-    return confidence >= this.MATCH_THRESHOLD
-  }
-  
-  /**
-   * Get confidence level label
-   */
-  static getConfidenceLevel(confidence: number): 'high' | 'medium' | 'low' {
-    if (confidence >= 0.8) return 'high'
-    if (confidence >= 0.6) return 'medium'
-    return 'low'
-  }
+
+  // Sort by confidence (highest first)
+  matches.sort((a, b) => b.confidence - a.confidence)
+
+  return matches
 }
 
-export default FaceMatcher
+/**
+ * Find best match from multiple candidates
+ */
+export function findBestMatch(
+  targetEmbedding: number[] | Float32Array,
+  knownEmbeddings: Array<{
+    userId: string
+    embedding: number[] | Float32Array
+  }>,
+  conditions: MatchingConditions = {}
+): FaceMatchResult | null {
+  const matches = matchFaceEmbedding(targetEmbedding, knownEmbeddings, conditions)
+
+  if (matches.length === 0) {
+    return null
+  }
+
+  // Return the best match (highest confidence)
+  return matches[0]
+}
+
+/**
+ * Normalize face embedding vector
+ * Useful for improving matching consistency
+ */
+export function normalizeEmbedding(embedding: number[] | Float32Array): Float32Array {
+  const normalized = new Float32Array(embedding.length)
+  let magnitude = 0
+
+  // Calculate magnitude
+  for (let i = 0; i < embedding.length; i++) {
+    magnitude += embedding[i] * embedding[i]
+  }
+  magnitude = Math.sqrt(magnitude)
+
+  // Normalize
+  if (magnitude > 0) {
+    for (let i = 0; i < embedding.length; i++) {
+      normalized[i] = embedding[i] / magnitude
+    }
+  } else {
+    // If magnitude is 0, return original
+    for (let i = 0; i < embedding.length; i++) {
+      normalized[i] = embedding[i]
+    }
+  }
+
+  return normalized
+}
+
+/**
+ * Validate face embedding
+ * Checks if embedding is valid and not corrupted
+ */
+export function validateEmbedding(embedding: number[] | Float32Array): boolean {
+  if (!embedding || embedding.length === 0) {
+    return false
+  }
+
+  // Check if all values are valid numbers
+  for (let i = 0; i < embedding.length; i++) {
+    if (!isFinite(embedding[i])) {
+      return false
+    }
+  }
+
+  // Check if embedding is not all zeros
+  let hasNonZero = false
+  for (let i = 0; i < embedding.length; i++) {
+    if (embedding[i] !== 0) {
+      hasNonZero = true
+      break
+    }
+  }
+
+  return hasNonZero
+}
+
+/**
+ * Calculate confidence score from distance
+ * Converts distance to confidence score (0-1)
+ */
+export function distanceToConfidence(distance: number, maxDistance: number = 1.5): number {
+  // Convert distance to confidence (inverse relationship)
+  const confidence = Math.max(0, 1 - (distance / maxDistance))
+  return confidence
+}
+
+/**
+ * Assess face match quality
+ */
+export function assessMatchQuality(matchResult: FaceMatchResult): {
+  quality: 'excellent' | 'good' | 'fair' | 'poor'
+  message: string
+} {
+  const { confidence } = matchResult
+
+  if (confidence >= 0.85) {
+    return {
+      quality: 'excellent',
+      message: 'Very high confidence match'
+    }
+  } else if (confidence >= 0.75) {
+    return {
+      quality: 'good',
+      message: 'High confidence match'
+    }
+  } else if (confidence >= 0.65) {
+    return {
+      quality: 'fair',
+      message: 'Moderate confidence match'
+    }
+  } else {
+    return {
+      quality: 'poor',
+      message: 'Low confidence match'
+    }
+  }
+}

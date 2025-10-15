@@ -150,7 +150,21 @@ export class ApiClient {
     return this.request<any>(`/api/admin/face/embeddings?userId=${userId}`)
   }
 
+  // Employee face enrollment (user can enroll their own face)
   static async enrollFace(data: {
+    userId: string
+    descriptor: number[]
+    quality?: number
+    metadata?: any
+  }) {
+    return this.request<any>('/api/employee/face/enroll', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // Admin face enrollment (admin can enroll any user's face)
+  static async enrollFaceAdmin(data: {
     userId: string
     descriptor: number[]
     quality?: number
@@ -162,7 +176,17 @@ export class ApiClient {
     })
   }
 
-  static async deleteFaceEmbedding(id: string) {
+  static async getUserFaceEnrollments(userId: string) {
+    return this.request<any>(`/api/employee/face/enroll?userId=${userId}`)
+  }
+
+  static async deleteFaceEmbedding(id: string, userId: string) {
+    return this.request<any>(`/api/employee/face/enroll?id=${id}&userId=${userId}`, {
+      method: 'DELETE',
+    })
+  }
+
+  static async deleteFaceEmbeddingAdmin(id: string) {
     return this.request<any>(`/api/admin/face/embeddings?id=${id}`, {
       method: 'DELETE',
     })

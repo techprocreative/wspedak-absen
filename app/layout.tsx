@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Suspense } from "react"
 import { AuthProvider } from "@/components/auth/AuthProvider"
 import { SITE_METADATA } from "@/lib/app-config"
@@ -30,6 +31,7 @@ export default function RootLayout({
           <Suspense fallback={null}>{children}</Suspense>
         </AuthProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

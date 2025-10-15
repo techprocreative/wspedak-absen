@@ -92,40 +92,64 @@ export function FaceEnrollmentModal({
     setError(null)
 
     try {
-      logger.info('Detecting face...')
+      logger.info('Detecting face with face-api.js...')
       
-      // Detect face
+      // Use real face-api.js detection
       const detection = await faceapi
-        .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+        .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions({
+          inputSize: 320,
+          scoreThreshold: 0.5
+        }))
         .withFaceLandmarks()
         .withFaceDescriptor()
 
       if (!detection) {
-        throw new Error('No face detected. Please ensure your face is clearly visible.')
+        throw new Error('No face detected. Please ensure your face is clearly visible and well-lit.')
       }
 
-      logger.info('Face detected with confidence', { value: detection.detection.score })
+      const confidence = detection.detection.score
+      logger.info('Face detected', { confidence })
 
-      // Get descriptor
+      // Validate confidence
+      if (confidence < 0.6) {
+        throw new Error(`Face detection confidence too low (${(confidence * 100).toFixed(1)}%). Please improve lighting and face positioning.`)
+      }
+
+      // Get descriptor (real face embedding from face-api.js)
       const descriptor = Array.from(detection.descriptor)
 
-      // Calculate quality score
-      const quality = detection.detection.score
+      // Validate descriptor
+      if (descriptor.length !== 128) {
+        throw new Error('Invalid face descriptor length. Please try again.')
+      }
 
-      logger.info('Enrolling face...')
+      logger.info('Enrolling face...', { descriptorLength: descriptor.length, quality: confidence })
 
-      // Send to API
-      await ApiClient.enrollFace({
-        userId,
-        descriptor,
-        quality,
-        metadata: {
-          enrolledAt: new Date().toISOString(),
-          method: 'webcam'
-        }
+      // Send to user enrollment API (not admin API)
+      const response = await fetch('/api/employee/face/enroll', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          descriptor,
+          quality: confidence,
+          metadata: {
+            enrolledAt: new Date().toISOString(),
+            method: 'webcam',
+            detectionConfidence: confidence
+          }
+        })
       })
 
-      logger.info('Face enrolled successfully')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to enroll face')
+      }
+
+      const data = await response.json()
+      logger.info('Face enrolled successfully', data)
 
       // Success
       setSuccess(true)
@@ -185,7 +209,8 @@ export function FaceEnrollmentModal({
                   ref={videoRef} 
                   autoPlay 
                   playsInline
-                  className="w-full h-auto"
+                  className="w-full h-auto transform scale-x-[-1]"
+                  style={{ transform: 'scaleX(-1)' }}
                 />
                 <canvas 
                   ref={canvasRef} 

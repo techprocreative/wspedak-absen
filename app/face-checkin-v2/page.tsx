@@ -475,7 +475,8 @@ export default function FaceCheckinV2Page() {
                 autoPlay
                 muted
                 playsInline
-                className="w-full h-full object-cover mirror"
+                className="w-full h-full object-cover transform scale-x-[-1]"
+                style={{ transform: 'scaleX(-1)' }}
               />
               
               {/* Face Detection Indicator */}
@@ -748,12 +749,6 @@ export default function FaceCheckinV2Page() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <style jsx global>{`
-        .mirror {
-          transform: scaleX(-1);
-        }
-      `}</style>
     </div>
   )
 }

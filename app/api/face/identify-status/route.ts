@@ -7,8 +7,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { serverDbManager } from '@/lib/server-db'
+import { findBestMatch, assessMatchQuality } from '@/lib/face-matching'
+import { logger } from '@/lib/logger'
 
-import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
@@ -25,40 +26,42 @@ export async function POST(request: NextRequest) {
 
     // Get all users with face embeddings
     const users = await serverDbManager.getUsers()
-    const usersWithFace = users.filter(u => u.faceDescriptor)
+    const allEmbeddings = await Promise.all(
+      users.map(async (user) => {
+        const embeddings = await serverDbManager.getFaceEmbeddings(user.id)
+        return embeddings.map(emb => ({
+          userId: user.id,
+          embedding: emb.embedding,
+          user: user
+        }))
+      })
+    )
 
-    if (usersWithFace.length === 0) {
+    const knownEmbeddings = allEmbeddings.flat().filter(e => e.embedding)
+
+    if (knownEmbeddings.length === 0) {
       return NextResponse.json(
         { 
           success: false, 
           error: 'No enrolled faces found',
           errorCode: 'NO_FACES_ENROLLED',
           message: 'No users have enrolled their faces yet. Please enroll your face first to use face recognition attendance.',
-          helpUrl: '/admin/employees'
+          helpUrl: '/employee/dashboard'
         },
         { status: 404 }
       )
     }
 
-    // Find matching user (simplified - using first match)
-    // In production, use proper face matching with threshold
-    let matchedUser = null
-    let bestDistance = Infinity
-    const MATCH_THRESHOLD = 0.6
+    // Find best matching user using cosine similarity
+    const bestMatch = findBestMatch(
+      descriptor,
+      knownEmbeddings.map(e => ({
+        userId: e.userId,
+        embedding: e.embedding
+      }))
+    )
 
-    for (const user of usersWithFace) {
-      const userDescriptor = JSON.parse(user.faceDescriptor as string)
-      
-      // Calculate Euclidean distance
-      const distance = euclideanDistance(descriptor, userDescriptor)
-      
-      if (distance < bestDistance && distance < MATCH_THRESHOLD) {
-        bestDistance = distance
-        matchedUser = user
-      }
-    }
-
-    if (!matchedUser) {
+    if (!bestMatch) {
       return NextResponse.json(
         { 
           success: false, 
@@ -66,11 +69,29 @@ export async function POST(request: NextRequest) {
           errorCode: 'FACE_NOT_RECOGNIZED',
           message: 'Your face was not recognized. Please ensure you have enrolled your face or try again with better lighting.',
           details: {
-            enrolledFaces: usersWithFace.length,
-            matchThreshold: MATCH_THRESHOLD,
-            bestDistance: bestDistance.toFixed(3)
+            enrolledFaces: knownEmbeddings.length,
+            minConfidenceRequired: 0.65
           }
         },
+        { status: 404 }
+      )
+    }
+
+    // Assess match quality
+    const matchQuality = assessMatchQuality(bestMatch)
+    
+    if (matchQuality.quality === 'poor') {
+      logger.warn('Low confidence face match', {
+        userId: bestMatch.userId,
+        confidence: bestMatch.confidence,
+        quality: matchQuality.quality
+      })
+    }
+
+    const matchedUser = knownEmbeddings.find(e => e.userId === bestMatch.userId)?.user
+    if (!matchedUser) {
+      return NextResponse.json(
+        { success: false, error: 'User data not found' },
         { status: 404 }
       )
     }
@@ -123,7 +144,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: userStatus,
-      confidence: 1 - bestDistance // Convert distance to confidence
+      confidence: bestMatch.confidence,
+      matchQuality: matchQuality.quality,
+      similarity: bestMatch.similarity
     })
 
   } catch (error) {
@@ -137,18 +160,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-// Euclidean distance calculation
-function euclideanDistance(a: number[], b: number[]): number {
-  if (a.length !== b.length) {
-    throw new Error('Vectors must have the same length')
-  }
-  
-  let sum = 0
-  for (let i = 0; i < a.length; i++) {
-    sum += Math.pow(a[i] - b[i], 2)
-  }
-  
-  return Math.sqrt(sum)
 }
