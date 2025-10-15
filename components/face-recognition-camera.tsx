@@ -205,13 +205,19 @@ export function FaceRecognitionCamera({
       const faces = await faceAPI.detectFaces(canvas)
       
       if (faces.length === 0) {
-        setError("No face detected. Please position your face within the frame.")
+        setError("No face detected. Please position your face clearly in the frame with good lighting.")
         return
       }
 
       if (faces.length > 1) {
-        setError("Multiple faces detected. Please ensure only your face is in the frame.")
-        return
+        // For enrollment, just use the first (most prominent) face
+        if (mode === "enrollment") {
+          logger.warn(`Multiple faces detected (${faces.length}), using first face for enrollment`)
+          // Continue with first face instead of erroring
+        } else {
+          setError(`Multiple faces detected (${faces.length}). Please ensure only your face is in the frame.`)
+          return
+        }
       }
 
       const face = faces[0]
@@ -221,12 +227,15 @@ export function FaceRecognitionCamera({
       const quality = await faceAPI.calculateFaceQuality(canvas, face)
       setFaceQuality(quality)
 
-      // Adjust quality threshold based on hardware optimizations
-      const qualityThreshold = enableHardwareOptimizations ? 0.4 : 0.5
+      // Adjust quality threshold based on hardware optimizations and mode
+      // Lower threshold for enrollment to make it easier to capture faces
+      const qualityThreshold = mode === "enrollment" 
+        ? 0.2  // Very lenient for enrollment
+        : (enableHardwareOptimizations ? 0.3 : 0.4) // Normal for verification
       
       // Check if quality is acceptable
       if (quality.overall < qualityThreshold) {
-        setError("Face quality is too low. Please ensure good lighting and clear view of your face.")
+        setError(`Face quality too low (${Math.round(quality.overall * 100)}%). Please ensure good lighting and clear view of your face.`)
         return
       }
 

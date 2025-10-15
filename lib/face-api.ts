@@ -10,6 +10,7 @@ import { faceWorkerManager, WorkerConfig } from './face-worker-manager';
 import { modelLoader, ModelType, ModelQuality } from './model-loader';
 import { imageProcessor, ImageProcessingOptions } from './image-processor';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export interface FaceLandmark {
   x: number;
   y: number;
@@ -80,7 +81,7 @@ export class FaceAPI {
   constructor(options: FaceDetectionOptions = {}) {
     this.options = {
       inputSize: 224,
-      scoreThreshold: 0.7,
+      scoreThreshold: 0.3, // Lowered from 0.7 to 0.3 for better face detection sensitivity
       maxFaces: 5,
       flipHorizontal: false,
       withLandmarks: true,
@@ -93,8 +94,8 @@ export class FaceAPI {
       // Web Worker defaults
       useWebWorker: true,
       workerConfig: {
-        detectionThreshold: 0.7,
-        recognitionThreshold: 0.8,
+        detectionThreshold: 0.3, // Lowered from 0.7 for better detection
+        recognitionThreshold: 0.6, // Lowered from 0.8 for more lenient matching
         maxFacesToDetect: 5,
         enableMemoryOptimization: true,
         adaptiveQuality: true,
@@ -144,9 +145,9 @@ export class FaceAPI {
       }
       
       this.modelsLoaded = true;
-      console.log('Face API models loaded successfully with hardware optimizations');
+      logger.info('Face API models loaded successfully with hardware optimizations');
     } catch (error) {
-      console.error('Failed to load face API models:', error);
+      logger.error('Failed to load face API models', error as Error);
       throw new Error('Face API models loading failed');
     }
   }
@@ -170,9 +171,9 @@ export class FaceAPI {
       await faceWorkerManager.initialize(workerConfig);
       this.isWorkerInitialized = true;
       
-      console.log('Face API worker initialized');
+      logger.info('Face API worker initialized');
     } catch (error) {
-      console.error('Failed to initialize face API worker:', error);
+      logger.error('Failed to initialize face API worker', error as Error);
       throw error;
     }
   }
@@ -268,9 +269,9 @@ export class FaceAPI {
         }
         
         this.currentModelQualities.set(modelType, nextQuality);
-        console.log(`Upgraded ${modelType} to ${nextQuality} model`);
+        logger.info('Upgraded ${modelType} to ${nextQuality} model');
       } catch (error) {
-        console.error(`Failed to load ${nextQuality} ${modelType} model in background:`, error);
+        logger.error('Failed to load ${nextQuality} ${modelType} model in background', error as Error);
       }
     }
   }
@@ -323,9 +324,9 @@ export class FaceAPI {
         }
         
         this.currentModelQualities.set(modelType, targetQuality);
-        console.log(`Auto-upgraded ${modelType} to ${targetQuality} model based on performance`);
+        logger.info('Auto-upgraded ${modelType} to ${targetQuality} model based on performance');
       } catch (error) {
-        console.error(`Failed to auto-upgrade ${modelType} to ${targetQuality} model:`, error);
+        logger.error('Failed to auto-upgrade ${modelType} to ${targetQuality} model', error as Error);
       }
     }
   }
@@ -364,9 +365,9 @@ export class FaceAPI {
       }
       
       this.currentModelQualities.set(modelType, ModelQuality.LIGHTWEIGHT);
-      console.log(`Downgraded ${modelType} to lightweight model due to memory constraints`);
+      logger.info('Downgraded ${modelType} to lightweight model due to memory constraints');
     } catch (error) {
-      console.error(`Failed to downgrade ${modelType} to lightweight model:`, error);
+      logger.error('Failed to downgrade ${modelType} to lightweight model', error as Error);
     }
   }
 
@@ -454,9 +455,9 @@ export class FaceAPI {
       }
       
       this.currentModelQualities.set(modelType, targetQuality);
-      console.log(`Manually upgraded ${modelType} to ${targetQuality} model`);
+      logger.info('Manually upgraded ${modelType} to ${targetQuality} model');
     } catch (error) {
-      console.error(`Failed to upgrade ${modelType} to ${targetQuality} model:`, error);
+      logger.error('Failed to upgrade ${modelType} to ${targetQuality} model', error as Error);
       throw error;
     }
   }
@@ -524,7 +525,7 @@ export class FaceAPI {
       
       return result.faces;
     } catch (error) {
-      console.error('Worker face detection failed, falling back to main thread:', error);
+      logger.error('Worker face detection failed, falling back to main thread', error as Error);
       
       // Fallback to main thread
       if (this.options.enableCPUOptimization) {
@@ -568,7 +569,7 @@ export class FaceAPI {
       
       return this.mockDetectFaces(processedInput);
     } catch (error) {
-      console.error('Face detection failed:', error);
+      logger.error('Face detection failed', error as Error);
       throw new Error('Face detection failed');
     }
   }
@@ -626,7 +627,7 @@ export class FaceAPI {
       
       return this.mockDetectFaceLandmarks(processedInput, faceDetection);
     } catch (error) {
-      console.error('Face landmark detection failed:', error);
+      logger.error('Face landmark detection failed', error as Error);
       throw new Error('Face landmark detection failed');
     }
   }
@@ -684,7 +685,7 @@ export class FaceAPI {
       
       return this.mockDetectFaceExpressions(processedInput, faceDetection);
     } catch (error) {
-      console.error('Face expression detection failed:', error);
+      logger.error('Face expression detection failed', error as Error);
       throw new Error('Face expression detection failed');
     }
   }
@@ -738,7 +739,7 @@ export class FaceAPI {
       
       return this.mockCalculateFaceQuality(processedInput, faceDetection);
     } catch (error) {
-      console.error('Face quality calculation failed:', error);
+      logger.error('Face quality calculation failed', error as Error);
       throw new Error('Face quality calculation failed');
     }
   }
@@ -801,7 +802,7 @@ export class FaceAPI {
       const result = await faceWorkerManager.generateEmbedding(imageInput);
       return result.embedding;
     } catch (error) {
-      console.error('Worker embedding generation failed, falling back to main thread:', error);
+      logger.error('Worker embedding generation failed, falling back to main thread', error as Error);
       
       // Fallback to main thread
       const faceDetection = await this.detectFacesInternal(input);
@@ -858,7 +859,7 @@ export class FaceAPI {
       
       return embedding;
     } catch (error) {
-      console.error('Face embedding generation failed:', error);
+      logger.error('Face embedding generation failed', error as Error);
       throw new Error('Face embedding generation failed');
     }
   }
@@ -896,7 +897,7 @@ export class FaceAPI {
       const result = await faceWorkerManager.matchFaces(embedding, knownEmbeddings);
       return result.matches;
     } catch (error) {
-      console.error('Worker face matching failed, falling back to main thread:', error);
+      logger.error('Worker face matching failed, falling back to main thread', error as Error);
       
       // Fallback to main thread
       if (this.options.enableCPUOptimization) {
@@ -964,7 +965,7 @@ export class FaceAPI {
       // Sort by confidence (highest first)
       return matches.sort((a, b) => b.confidence - a.confidence);
     } catch (error) {
-      console.error('Face matching failed:', error);
+      logger.error('Face matching failed', error as Error);
       throw new Error('Face matching failed');
     }
   }
@@ -1015,7 +1016,7 @@ export class FaceAPI {
         this.isProcessing = false;
       }
     } catch (error) {
-      console.error('Error processing operation queue:', error);
+      logger.error('Error processing operation queue', error as Error);
       this.isProcessing = false;
     }
   }
@@ -1043,7 +1044,7 @@ export class FaceAPI {
   private async mockLoadModels(): Promise<void> {
     return new Promise((resolve) => {
       setTimeout(() => {
-        console.log('Face API models loaded');
+        logger.info('Face API models loaded');
         resolve();
       }, 1000);
     });
@@ -1208,7 +1209,7 @@ export class FaceAPI {
         await faceWorkerManager.cleanup();
         this.isWorkerInitialized = false;
       } catch (error) {
-        console.error('Failed to cleanup face API worker:', error);
+        logger.error('Failed to cleanup face API worker', error as Error);
       }
     }
     
@@ -1252,7 +1253,7 @@ export class FaceAPI {
       try {
         return await faceWorkerManager.getPerformanceMetrics();
       } catch (error) {
-        console.error('Failed to get worker performance metrics:', error);
+        logger.error('Failed to get worker performance metrics', error as Error);
         return null;
       }
     }
@@ -1279,7 +1280,7 @@ export class FaceAPI {
         // Update worker config in options
         this.options.workerConfig = { ...this.options.workerConfig, ...config };
       } catch (error) {
-        console.error('Failed to update worker config:', error);
+        logger.error('Failed to update worker config', error as Error);
         throw error;
       }
     }
