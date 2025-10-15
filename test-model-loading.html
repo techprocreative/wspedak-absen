@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Model Loading Debug</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a1a1a;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ddd;
+            transition: all 0.3s ease;
+        }
+        .status-card.loading {
+            border-left-color: #ffa500;
+            background: #fff8e1;
+        }
+        .status-card.success {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+        .status-card.error {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        .status-title {
+            font-weight: 600;
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .status-message {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .status-time {
+            color: #999;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .model-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .model-item.loaded {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+        .model-item.failed {
+            border-color: #f44336;
+            background: #fff5f5;
+        }
+        .model-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .model-status {
+            font-size: 24px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 20px;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        .log-area {
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+        }
+        .log-time {
+            color: #888;
+        }
+        .log-info {
+            color: #4fc3f7;
+        }
+        .log-success {
+            color: #66bb6a;
+        }
+        .log-error {
+            color: #ef5350;
+        }
+        .log-warn {
+            color: #ffa726;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .loading-indicator {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Face Model Loading Debug Tool</h1>
+        
+        <div class="button-group">
+            <button id="loadModelsBtn" onclick="loadModels()">Load Models</button>
+            <button id="loadWithTimeoutBtn" onclick="loadModelsWithTimeout()">Load with 10s Timeout</button>
+            <button id="checkStatusBtn" onclick="checkStatus()">Check Status</button>
+            <button id="clearLogsBtn" onclick="clearLogs()">Clear Logs</button>
+        </div>
+
+        <div id="statusContainer">
+            <div class="status-card" id="mainStatus">
+                <div class="status-title">System Status</div>
+                <div class="status-message">Ready to load models...</div>
+                <div class="status-time"></div>
+            </div>
+        </div>
+
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+        </div>
+
+        <div class="model-grid" id="modelGrid">
+            <div class="model-item" id="model-tiny">
+                <div class="model-name">TinyFaceDetector</div>
+                <div class="model-status">⏳</div>
+            </div>
+            <div class="model-item" id="model-landmarks">
+                <div class="model-name">FaceLandmarks</div>
+                <div class="model-status">⏳</div>
+            </div>
+            <div class="model-item" id="model-recognition">
+                <div class="model-name">FaceRecognition</div>
+                <div class="model-status">⏳</div>
+            </div>
+            <div class="model-item" id="model-ssd">
+                <div class="model-name">SsdMobilenet</div>
+                <div class="model-status">⏳</div>
+            </div>
+        </div>
+
+        <div class="log-area" id="logArea"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script>
+        let startTime = null;
+        let loadingInProgress = false;
+        let timeoutId = null;
+        
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('logArea');
+            const time = new Date().toLocaleTimeString();
+            const typeClass = `log-${type}`;
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${time}]</span> <span class="${typeClass}">${message}</span>`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+
+        function clearLogs() {
+            document.getElementById('logArea').innerHTML = '';
+            log('Logs cleared', 'info');
+        }
+
+        function updateStatus(message, type = 'loading') {
+            const statusCard = document.getElementById('mainStatus');
+            statusCard.className = `status-card ${type}`;
+            statusCard.querySelector('.status-message').textContent = message;
+            statusCard.querySelector('.status-time').textContent = new Date().toLocaleTimeString();
+        }
+
+        function updateModelStatus(modelId, loaded) {
+            const modelItem = document.getElementById(`model-${modelId}`);
+            if (loaded) {
+                modelItem.classList.add('loaded');
+                modelItem.classList.remove('failed');
+                modelItem.querySelector('.model-status').textContent = '✅';
+            } else {
+                modelItem.classList.add('failed');
+                modelItem.classList.remove('loaded');
+                modelItem.querySelector('.model-status').textContent = '❌';
+            }
+        }
+
+        function updateProgress(loaded, total) {
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            
+            progressBar.style.display = 'block';
+            const percentage = Math.round((loaded / total) * 100);
+            progressFill.style.width = `${percentage}%`;
+            progressFill.textContent = `${percentage}%`;
+        }
+
+        async function loadModels(timeout = null) {
+            if (loadingInProgress) {
+                log('Loading already in progress!', 'warn');
+                return;
+            }
+
+            loadingInProgress = true;
+            startTime = Date.now();
+            
+            log('Starting model loading...', 'info');
+            updateStatus('Initializing AI models...', 'loading');
+            
+            // Disable buttons
+            document.getElementById('loadModelsBtn').disabled = true;
+            document.getElementById('loadWithTimeoutBtn').disabled = true;
+            
+            // Reset model status
+            ['tiny', 'landmarks', 'recognition', 'ssd'].forEach(id => {
+                document.getElementById(`model-${id}`).className = 'model-item';
+                document.getElementById(`model-${id}`).querySelector('.model-status').textContent = '⏳';
+            });
+
+            let modelsLoaded = 0;
+            const totalModels = 4;
+            
+            // Set timeout if specified
+            if (timeout) {
+                timeoutId = setTimeout(() => {
+                    if (loadingInProgress) {
+                        log(`Timeout reached after ${timeout}ms!`, 'error');
+                        updateStatus(`Loading timeout after ${timeout}ms`, 'error');
+                        loadingInProgress = false;
+                        document.getElementById('loadModelsBtn').disabled = false;
+                        document.getElementById('loadWithTimeoutBtn').disabled = false;
+                    }
+                }, timeout);
+            }
+
+            try {
+                // Load TinyFaceDetector
+                log('Loading TinyFaceDetector...', 'info');
+                try {
+                    await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+                    log('✅ TinyFaceDetector loaded', 'success');
+                    updateModelStatus('tiny', true);
+                    modelsLoaded++;
+                    updateProgress(modelsLoaded, totalModels);
+                } catch (err) {
+                    log(`❌ TinyFaceDetector failed: ${err.message}`, 'error');
+                    updateModelStatus('tiny', false);
+                }
+
+                // Load FaceLandmarks
+                log('Loading FaceLandmark68Net...', 'info');
+                try {
+                    await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+                    log('✅ FaceLandmark68Net loaded', 'success');
+                    updateModelStatus('landmarks', true);
+                    modelsLoaded++;
+                    updateProgress(modelsLoaded, totalModels);
+                } catch (err) {
+                    log(`❌ FaceLandmark68Net failed: ${err.message}`, 'error');
+                    updateModelStatus('landmarks', false);
+                }
+
+                // Load FaceRecognition
+                log('Loading FaceRecognitionNet...', 'info');
+                try {
+                    await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+                    log('✅ FaceRecognitionNet loaded', 'success');
+                    updateModelStatus('recognition', true);
+                    modelsLoaded++;
+                    updateProgress(modelsLoaded, totalModels);
+                } catch (err) {
+                    log(`❌ FaceRecognitionNet failed: ${err.message}`, 'error');
+                    updateModelStatus('recognition', false);
+                }
+
+                // Load SsdMobilenet
+                log('Loading SsdMobilenetv1...', 'info');
+                try {
+                    await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+                    log('✅ SsdMobilenetv1 loaded', 'success');
+                    updateModelStatus('ssd', true);
+                    modelsLoaded++;
+                    updateProgress(modelsLoaded, totalModels);
+                } catch (err) {
+                    log(`❌ SsdMobilenetv1 failed: ${err.message}`, 'error');
+                    updateModelStatus('ssd', false);
+                }
+
+                const loadTime = Date.now() - startTime;
+                
+                if (modelsLoaded >= 3) {
+                    log(`✅ Models loaded successfully in ${loadTime}ms`, 'success');
+                    updateStatus(`All models loaded in ${loadTime}ms`, 'success');
+                } else {
+                    log(`⚠️ Only ${modelsLoaded}/${totalModels} models loaded`, 'warn');
+                    updateStatus(`Partially loaded (${modelsLoaded}/${totalModels})`, 'error');
+                }
+
+            } catch (error) {
+                const loadTime = Date.now() - startTime;
+                log(`❌ Fatal error: ${error.message}`, 'error');
+                updateStatus(`Failed after ${loadTime}ms: ${error.message}`, 'error');
+            } finally {
+                loadingInProgress = false;
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                
+                // Re-enable buttons
+                document.getElementById('loadModelsBtn').disabled = false;
+                document.getElementById('loadWithTimeoutBtn').disabled = false;
+            }
+        }
+
+        async function loadModelsWithTimeout() {
+            await loadModels(10000); // 10 second timeout
+        }
+
+        function checkStatus() {
+            log('Checking model status...', 'info');
+            
+            const models = {
+                'TinyFaceDetector': faceapi.nets.tinyFaceDetector.isLoaded,
+                'FaceLandmark68Net': faceapi.nets.faceLandmark68Net.isLoaded,
+                'FaceRecognitionNet': faceapi.nets.faceRecognitionNet.isLoaded,
+                'SsdMobilenetv1': faceapi.nets.ssdMobilenetv1.isLoaded,
+            };
+
+            for (const [name, loaded] of Object.entries(models)) {
+                if (loaded) {
+                    log(`✅ ${name}: Loaded`, 'success');
+                } else {
+                    log(`❌ ${name}: Not loaded`, 'warn');
+                }
+            }
+
+            // Check if face-api.js is available
+            if (typeof faceapi !== 'undefined') {
+                log('✅ face-api.js library is loaded', 'success');
+            } else {
+                log('❌ face-api.js library NOT loaded!', 'error');
+            }
+        }
+
+        // Initial status check on load
+        window.addEventListener('load', () => {
+            log('Page loaded, ready to test', 'info');
+            checkStatus();
+        });
+    </script>
+</body>
+</html>

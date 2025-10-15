@@ -137,19 +137,33 @@ export class FaceAPI {
         MemoryOptimizer.cleanup();
       }
 
-      // Initialize Web Worker if enabled
-      if (this.options.useWebWorker) {
-        await this.initializeWorker();
-      } else {
-        // Load models with progressive loading
-        await this.loadModelsWithProgressiveLoading();
+      // Use the simplified face-api model loader with timeout
+      logger.info('Loading face-api.js models with timeout...');
+      
+      // Import the loader dynamically to avoid circular dependencies
+      const { loadFaceApiModels } = await import('./face-api-loader');
+      
+      // Load models with 20 second timeout
+      const result = await loadFaceApiModels(20000);
+      
+      if (!result.success) {
+        throw new Error(`Model loading failed: ${result.error}`);
       }
       
       this.modelsLoaded = true;
-      logger.info('Face API models loaded successfully with hardware optimizations');
+      logger.info(`Face API models loaded successfully in ${result.loadTime}ms`);
     } catch (error) {
       logger.error('Failed to load face API models', error as Error);
-      throw new Error('Face API models loading failed');
+      
+      // More specific error message for users
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMsg.includes('timeout')) {
+        throw new Error('Model loading timed out. Please check your internet connection and refresh the page.');
+      } else if (errorMsg.includes('not found')) {
+        throw new Error('Model files not found. Please ensure /public/models/ directory contains the required files.');
+      } else {
+        throw new Error(`Face API models loading failed: ${errorMsg}`);
+      }
     }
   }
 
