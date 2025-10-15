@@ -11,6 +11,7 @@ import { faceStorage } from "@/lib/face-storage"
 import { FaceEmbedding } from "@/lib/face-recognition"
 import { MemoryOptimizer, CPUOptimizer } from "@/lib/hardware-optimization"
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 interface FaceRecognitionCameraProps {
   onCapture?: (imageData: string) => Promise<void>
   onFaceDetected?: (detection: FaceDetection) => void
@@ -51,16 +52,20 @@ export function FaceRecognitionCamera({
     try {
       setError(null)
       
-      // Check memory status if hardware optimizations are enabled
+      // Check memory status if hardware optimizations are enabled (but don't block camera startup)
       if (enableHardwareOptimizations && MemoryOptimizer.isMemoryCritical()) {
         setMemoryStatus("critical")
+        // Cleanup but don't prevent camera from starting
         MemoryOptimizer.cleanup()
+        logger.warn('Memory critical during camera start, cleanup performed')
       } else if (enableHardwareOptimizations) {
         // Check if memory is approaching critical levels
         const memory = (window.performance as any).memory
         if (memory) {
           const usedRatio = memory.usedJSHeapSize / memory.totalJSHeapSize
-          if (usedRatio > 0.7) {
+          if (usedRatio > 0.85) {
+            setMemoryStatus("critical")
+          } else if (usedRatio > 0.7) {
             setMemoryStatus("warning")
           } else {
             setMemoryStatus("normal")
@@ -91,7 +96,7 @@ export function FaceRecognitionCamera({
       }
     } catch (err) {
       setError("Tidak dapat mengakses kamera. Pastikan izin kamera telah diberikan.")
-      console.error("Camera access error:", err)
+      logger.error('Camera access error', err as Error)
     }
   }, [enableHardwareOptimizations])
 
@@ -140,7 +145,7 @@ export function FaceRecognitionCamera({
           }
         }
       } catch (err) {
-        console.error("Failed to initialize face recognition:", err)
+        logger.error('Failed to initialize face recognition', err as Error)
         setError("Failed to initialize face recognition. Please try again.")
       }
     }
@@ -281,7 +286,7 @@ export function FaceRecognitionCamera({
         }
       }
     } catch (err) {
-      console.error("Error processing face:", err)
+      logger.error('Error processing face', err as Error)
       setError("Failed to process face. Please try again.")
     }
 

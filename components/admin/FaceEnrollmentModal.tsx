@@ -70,7 +70,7 @@ export function FaceEnrollmentModal({ userId, userName, onClose, targetSamples =
                 mode="enrollment"
                 userId={userId}
                 onEnrolled={handleEnrolled}
-                enableHardwareOptimizations={true}
+                enableHardwareOptimizations={false}
               />
             )}
 
