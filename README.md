@@ -196,7 +196,29 @@ npm test face-matching
 
 ## 🚀 Deployment
 
-### Option 1: Vercel (Recommended)
+### Option 1: Vercel with Auto-Deployment (Recommended) ⭐
+
+**Setup sekali, otomatis deploy setiap push ke GitHub!**
+
+```bash
+# 1. Push code ke GitHub
+git remote add origin https://github.com/yourusername/v0-attendance.git
+git push -u origin main
+
+# 2. Import di Vercel
+# - Login ke https://vercel.com
+# - Connect GitHub account
+# - Import repository
+# - Configure environment variables
+# - Deploy!
+
+# 3. Auto-deployment aktif! 🎉
+# Setiap git push = auto deploy
+```
+
+**📖 Panduan Lengkap**: Lihat [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) untuk step-by-step guide lengkap.
+
+### Option 2: Vercel CLI (Manual)
 
 ```bash
 # Install Vercel CLI
@@ -445,16 +467,17 @@ git push origin feature/your-feature
 ## 📖 Documentation
 
 ### Essential Docs
-- **[DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)** - Complete documentation index
-- **[START_HERE.md](./START_HERE.md)** - Quick start guide (5 min)
-- **[DYNAMIC_ATTENDANCE_SYSTEM_DESIGN.md](./DYNAMIC_ATTENDANCE_SYSTEM_DESIGN.md)** - System design v3.0
-- **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - Database migration guide
-- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Developer cheat sheet
+- **[DOCUMENTATION_INDEX.md](./docs/root-docs/DOCUMENTATION_INDEX.md)** - Complete documentation index
+- **[START_HERE.md](./docs/root-docs/START_HERE.md)** - Quick start guide (5 min)
+- **[DYNAMIC_ATTENDANCE_SYSTEM_DESIGN.md](./docs/root-docs/DYNAMIC_ATTENDANCE_SYSTEM_DESIGN.md)** - System design v3.0
+- **[MIGRATION_GUIDE.md](./docs/root-docs/MIGRATION_GUIDE.md)** - Database migration guide
+- **[QUICK_REFERENCE.md](./docs/root-docs/QUICK_REFERENCE.md)** - Developer cheat sheet
 
 ### Additional Docs
-- **[STATUS.md](./STATUS.md)** - Project status & metrics
-- **[TESTING.md](./TESTING.md)** - Testing framework guide
-- **[SECURITY.md](./SECURITY.md)** - Security best practices
+- **[STATUS.md](./docs/root-docs/STATUS.md)** - Project status & metrics
+- **[TESTING.md](./docs/root-docs/TESTING.md)** - Testing framework guide
+- **[SECURITY.md](./docs/root-docs/SECURITY.md)** - Security best practices
+- **[CLEANUP_REPORT.md](./docs/root-docs/CLEANUP_REPORT.md)** - Project cleanup report
 
 ### Implementation Details
 - [docs/implementation/](./docs/implementation/) - Detailed implementation docs

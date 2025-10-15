@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/.pnp
+.pnp.js
 
 # next.js
 /.next/
@@ -9,6 +11,7 @@
 
 # production
 /build
+/dist
 
 # debug
 npm-debug.log*
@@ -16,8 +19,18 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
-.env*
+# env files (CRITICAL: Never commit these!)
+.env
+.env.*
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+!.env.example
+!.env.production.example
 
 # vercel
 .vercel
@@ -25,3 +38,49 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# testing
+/coverage
+/.nyc_output
+/playwright-report
+/test-results
+
+# misc
+.DS_Store
+*.pem
+*.log
+
+# IDE
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# backup files
+*.backup
+*.bak
+*.tmp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# secrets and keys (CRITICAL: Never commit these!)
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+.secrets
+
+# database
+*.db
+*.sqlite
+*.sqlite3
+
+# Other
+.cache
+.temp
