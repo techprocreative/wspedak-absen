@@ -60,11 +60,11 @@ export default function FaceCheckinPage() {
   const [cameraPermission, setCameraPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt')
   const [showPermissionHelper, setShowPermissionHelper] = useState(false)
 
-  // Load models
+  // Load models (non-blocking for fast camera startup)
   useEffect(() => {
     async function loadModels() {
       try {
-        logger.info('Loading face-api models...')
+        logger.info('Loading face-api models in background...')
         await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
         await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
         await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
@@ -75,7 +75,7 @@ export default function FaceCheckinPage() {
         setError('Failed to load face recognition models. Please refresh the page.')
       }
     }
-    loadModels()
+    loadModels() // Non-blocking - camera can start before this completes
   }, [])
 
   // Check camera permission
@@ -103,8 +103,7 @@ export default function FaceCheckinPage() {
 
   // Start camera
   const startCamera = async () => {
-    if (!modelsLoaded) return
-
+    // Don't block camera startup on models - they can load in parallel
     try {
       logger.info('Requesting camera access...')
       setError(null)
@@ -120,13 +119,26 @@ export default function FaceCheckinPage() {
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
+        
+        // Wait for video metadata to load before updating state
+        videoRef.current.onloadedmetadata = () => {
+          setStream(mediaStream)
+          setCameraPermission('granted')
+          logger.info('Camera started successfully')
+          
+          // Auto-identify user after camera starts (but wait for models)
+          if (modelsLoaded) {
+            setTimeout(() => identifyUser(), 1000)
+          } else {
+            logger.info('Camera ready, waiting for models to load...')
+            // Will auto-identify when models finish loading
+          }
+        }
+      } else {
+        // Fallback if video ref not ready
+        setStream(mediaStream)
+        setCameraPermission('granted')
       }
-      setStream(mediaStream)
-      setCameraPermission('granted')
-      logger.info('Camera started')
-      
-      // Auto-identify user after camera starts
-      setTimeout(() => identifyUser(), 1000)
     } catch (err: any) {
       logger.error('Failed to access camera', err as Error)
       setCameraPermission('denied')
@@ -144,8 +156,9 @@ export default function FaceCheckinPage() {
     }
   }
 
+  // Auto-start camera when component mounts (don't wait for models)
   useEffect(() => {
-    if (modelsLoaded && !stream && cameraPermission !== 'denied') {
+    if (!stream && cameraPermission !== 'denied') {
       startCamera()
     }
 
@@ -154,7 +167,15 @@ export default function FaceCheckinPage() {
         stream.getTracks().forEach(track => track.stop())
       }
     }
-  }, [modelsLoaded])
+  }, []) // Remove modelsLoaded dependency - don't wait for it
+  
+  // Auto-identify when both camera AND models are ready
+  useEffect(() => {
+    if (modelsLoaded && stream && !userStatus && !identifying) {
+      logger.info('Models and camera ready, starting auto-identify')
+      setTimeout(() => identifyUser(), 1000)
+    }
+  }, [modelsLoaded, stream])
 
   // Get location
   useEffect(() => {
