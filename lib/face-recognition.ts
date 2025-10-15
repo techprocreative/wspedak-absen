@@ -4,6 +4,7 @@
  * Designed to work efficiently on DS223J hardware constraints
  */
 
+import * as faceapi from 'face-api.js';
 import { MemoryOptimizer, CPUOptimizer, FaceRecognitionOptimizer } from './hardware-optimization';
 import { faceWorkerManager, WorkerConfig } from './face-worker-manager';
 import { modelLoader, ModelType, ModelQuality } from './model-loader';
@@ -488,7 +489,7 @@ export class FaceRecognition {
       }
       
       return {
-        faces: this.mockDetectFaces(processedImage),
+        faces: await this.mockDetectFaces(processedImage),
         imageQuality,
       };
     } catch (error) {
@@ -587,7 +588,7 @@ export class FaceRecognition {
         processedImage = tempImage;
       }
       
-      const embedding = this.mockGenerateEmbedding(processedImage, faceDetection);
+      const embedding = await this.mockGenerateEmbedding(processedImage, faceDetection);
       
       // Optimize embedding for memory usage
       if (this.options.enableMemoryOptimization) {
@@ -787,43 +788,72 @@ export class FaceRecognition {
   }
 
   /**
-   * Mock face detection for demonstration
+   * Real face detection using face-api.js
    */
-  private mockDetectFaces(imageElement: HTMLImageElement | HTMLVideoElement): FaceDetection[] {
-    // Simulate face detection with random data
-    const faceCount = Math.floor(Math.random() * 2) + 1; // 1-2 faces
-    
-    return Array.from({ length: faceCount }, (_, i) => ({
-      boundingBox: {
-        x: Math.random() * 0.3,
-        y: Math.random() * 0.3,
-        width: 0.3 + Math.random() * 0.2,
-        height: 0.3 + Math.random() * 0.2,
-      },
-      landmarks: Array.from({ length: 5 }, () => ({
-        x: Math.random(),
-        y: Math.random(),
-      })),
-      confidence: 0.8 + Math.random() * 0.2,
-    }));
+  private async mockDetectFaces(imageElement: HTMLImageElement | HTMLVideoElement): Promise<FaceDetection[]> {
+    try {
+      // Use face-api.js to detect faces with landmarks
+      const detections = await faceapi
+        .detectAllFaces(imageElement, new faceapi.TinyFaceDetectorOptions({
+          inputSize: this.options.detectionThreshold || 320,
+          scoreThreshold: this.options.confidenceThreshold || 0.5
+        }))
+        .withFaceLandmarks()
+        .withFaceDescriptors();
+
+      // Convert face-api.js format to our FaceDetection format
+      return detections.map(detection => ({
+        boundingBox: {
+          x: detection.detection.box.x,
+          y: detection.detection.box.y,
+          width: detection.detection.box.width,
+          height: detection.detection.box.height,
+        },
+        landmarks: detection.landmarks.positions.slice(0, 5).map(pos => ({
+          x: pos.x,
+          y: pos.y,
+        })),
+        confidence: detection.detection.score,
+        embedding: new Float32Array(detection.descriptor) // Include the descriptor as embedding
+      }));
+    } catch (error) {
+      logger.error('Face detection failed', error as Error);
+      // Return empty array if detection fails
+      return [];
+    }
   }
 
   /**
-   * Mock embedding generation for demonstration
+   * Real embedding generation using face-api.js
    */
-  private mockGenerateEmbedding(
+  private async mockGenerateEmbedding(
     imageElement: HTMLImageElement | HTMLVideoElement,
     faceDetection: FaceDetection
-  ): Float32Array {
-    // Generate a random embedding of fixed size
-    const embeddingSize = 128; // Typical embedding size
-    const embedding = new Float32Array(embeddingSize);
-    
-    for (let i = 0; i < embeddingSize; i++) {
-      embedding[i] = Math.random() * 2 - 1; // Values between -1 and 1
+  ): Promise<Float32Array> {
+    try {
+      // If embedding already exists in the detection, use it
+      if (faceDetection.embedding && faceDetection.embedding.length > 0) {
+        return faceDetection.embedding;
+      }
+
+      // Otherwise, generate a new descriptor using face-api.js
+      const detection = await faceapi
+        .detectSingleFace(imageElement, new faceapi.TinyFaceDetectorOptions({
+          inputSize: this.options.detectionThreshold || 320,
+          scoreThreshold: this.options.confidenceThreshold || 0.5
+        }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (detection && detection.descriptor) {
+        return new Float32Array(detection.descriptor);
+      }
+
+      throw new Error('No face detected for embedding generation');
+    } catch (error) {
+      logger.error('Face embedding generation failed', error as Error);
+      throw error;
     }
-    
-    return embedding;
   }
 
   /**

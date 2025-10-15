@@ -4,6 +4,7 @@
  * Optimized for offline use on DS223J hardware
  */
 
+import * as faceapi from 'face-api.js';
 import { FaceDetection, FaceEmbedding } from './face-recognition';
 import { MemoryOptimizer, CPUOptimizer, FaceRecognitionOptimizer } from './hardware-optimization';
 import { faceWorkerManager, WorkerConfig } from './face-worker-manager';
@@ -567,7 +568,7 @@ export class FaceAPI {
         processedInput = tempImage;
       }
       
-      return this.mockDetectFaces(processedInput);
+      return await this.mockDetectFaces(processedInput);
     } catch (error) {
       logger.error('Face detection failed', error as Error);
       throw new Error('Face detection failed');
@@ -850,7 +851,7 @@ export class FaceAPI {
         processedInput = tempImage;
       }
       
-      const embedding = this.mockGenerateFaceEmbedding(processedInput, faceDetection);
+      const embedding = await this.mockGenerateFaceEmbedding(processedInput, faceDetection);
       
       // Optimize embedding for memory usage
       if (this.options.enableMemoryOptimization) {
@@ -1039,39 +1040,59 @@ export class FaceAPI {
   }
 
   /**
-   * Mock model loading
+   * Load face-api.js models
    */
   private async mockLoadModels(): Promise<void> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        logger.info('Face API models loaded');
-        resolve();
-      }, 1000);
-    });
+    try {
+      // Load all required models from /public/models directory
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+        faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+        faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+        faceapi.nets.ssdMobilenetv1.loadFromUri('/models')
+      ]);
+      
+      logger.info('Face API models loaded successfully');
+    } catch (error) {
+      logger.error('Failed to load face-api.js models', error as Error);
+      throw new Error('Failed to load face recognition models. Please check if model files exist in /public/models/');
+    }
   }
 
   /**
-   * Mock face detection
+   * Real face detection using face-api.js
    */
-  private mockDetectFaces(
+  private async mockDetectFaces(
     input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement
-  ): FaceDetection[] {
-    // Simulate face detection with random data
-    const faceCount = Math.floor(Math.random() * 2) + 1; // 1-2 faces
-    
-    return Array.from({ length: faceCount }, (_, i) => ({
-      boundingBox: {
-        x: Math.random() * 0.3,
-        y: Math.random() * 0.3,
-        width: 0.3 + Math.random() * 0.2,
-        height: 0.3 + Math.random() * 0.2,
-      },
-      landmarks: Array.from({ length: 5 }, () => ({
-        x: Math.random(),
-        y: Math.random(),
-      })),
-      confidence: 0.8 + Math.random() * 0.2,
-    }));
+  ): Promise<FaceDetection[]> {
+    try {
+      // Use face-api.js to detect faces with landmarks
+      const detections = await faceapi
+        .detectAllFaces(input, new faceapi.TinyFaceDetectorOptions({
+          inputSize: this.options.inputSize || 320,
+          scoreThreshold: this.options.scoreThreshold || 0.5
+        }))
+        .withFaceLandmarks();
+
+      // Convert face-api.js format to our FaceDetection format
+      return detections.map(detection => ({
+        boundingBox: {
+          x: detection.detection.box.x,
+          y: detection.detection.box.y,
+          width: detection.detection.box.width,
+          height: detection.detection.box.height,
+        },
+        landmarks: detection.landmarks.positions.slice(0, 5).map(pos => ({
+          x: pos.x,
+          y: pos.y,
+        })),
+        confidence: detection.detection.score,
+      }));
+    } catch (error) {
+      logger.error('Face detection failed', error as Error);
+      // Return empty array if detection fails
+      return [];
+    }
   }
 
   /**
@@ -1161,21 +1182,34 @@ export class FaceAPI {
   }
 
   /**
-   * Mock face embedding generation
+   * Real face embedding generation using face-api.js
    */
-  private mockGenerateFaceEmbedding(
+  private async mockGenerateFaceEmbedding(
     input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,
     faceDetection: FaceDetection
-  ): Float32Array {
-    // Generate a random embedding of fixed size
-    const embeddingSize = 128; // Typical embedding size
-    const embedding = new Float32Array(embeddingSize);
-    
-    for (let i = 0; i < embeddingSize; i++) {
-      embedding[i] = Math.random() * 2 - 1; // Values between -1 and 1
+  ): Promise<Float32Array> {
+    try {
+      // Use face-api.js to generate face descriptor (embedding)
+      const detection = await faceapi
+        .detectSingleFace(input, new faceapi.TinyFaceDetectorOptions({
+          inputSize: this.options.inputSize || 320,
+          scoreThreshold: this.options.scoreThreshold || 0.5
+        }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (detection && detection.descriptor) {
+        // Return the face descriptor as Float32Array
+        return new Float32Array(detection.descriptor);
+      }
+
+      // If no face detected, throw error
+      throw new Error('No face detected for embedding generation');
+    } catch (error) {
+      logger.error('Face embedding generation failed', error as Error);
+      // Return empty embedding on failure (should be handled by caller)
+      throw error;
     }
-    
-    return embedding;
   }
 
   /**

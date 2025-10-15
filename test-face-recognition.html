@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition System Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .test-result {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .status-item {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .status-label {
+            color: #7f8c8d;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .status-value {
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        video, canvas {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Face Recognition System Test Suite</h1>
+        
+        <!-- Status Overview -->
+        <div class="test-section">
+            <div class="test-title">System Status</div>
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-label">Face-API.js</div>
+                    <div class="status-value" id="faceApiStatus">Checking...</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Models Loaded</div>
+                    <div class="status-value" id="modelsStatus">Not Loaded</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Camera Access</div>
+                    <div class="status-value" id="cameraStatus">Not Tested</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Database Connection</div>
+                    <div class="status-value" id="dbStatus">Not Tested</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 1: Check Face-API.js -->
+        <div class="test-section">
+            <div class="test-title">Test 1: Face-API.js Library Check</div>
+            <button onclick="testFaceApiLibrary()">Run Test</button>
+            <div id="test1Result" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 2: Load Models -->
+        <div class="test-section">
+            <div class="test-title">Test 2: Load Face Recognition Models</div>
+            <button onclick="testLoadModels()">Load Models</button>
+            <div id="test2Result" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 3: Camera Test -->
+        <div class="test-section">
+            <div class="test-title">Test 3: Camera Access & Face Detection</div>
+            <button onclick="startCameraTest()">Start Camera</button>
+            <button onclick="detectFace()">Detect Face</button>
+            <button onclick="stopCamera()">Stop Camera</button>
+            <video id="videoElement" autoplay muted class="hidden" width="640" height="480"></video>
+            <canvas id="canvasElement" class="hidden"></canvas>
+            <div id="test3Result" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 4: API Endpoints -->
+        <div class="test-section">
+            <div class="test-title">Test 4: API Endpoints</div>
+            <button onclick="testIdentifyAPI()">Test Identify API</button>
+            <button onclick="testEnrollAPI()">Test Enroll API</button>
+            <div id="test4Result" class="test-result hidden"></div>
+        </div>
+
+        <!-- Test 5: End-to-End Test -->
+        <div class="test-section">
+            <div class="test-title">Test 5: End-to-End Face Recognition</div>
+            <button onclick="runEndToEndTest()">Run Complete Test</button>
+            <div id="test5Result" class="test-result hidden"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script>
+        let stream = null;
+        let modelsLoaded = false;
+
+        // Test 1: Check if face-api.js is loaded
+        async function testFaceApiLibrary() {
+            const resultDiv = document.getElementById('test1Result');
+            resultDiv.classList.remove('hidden');
+            
+            try {
+                if (typeof faceapi !== 'undefined') {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.textContent = '✅ face-api.js loaded successfully\nVersion: ' + (faceapi.version || 'Unknown');
+                    document.getElementById('faceApiStatus').textContent = '✅ Loaded';
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.textContent = '❌ face-api.js is NOT loaded';
+                    document.getElementById('faceApiStatus').textContent = '❌ Not Found';
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = '❌ Error: ' + error.message;
+                document.getElementById('faceApiStatus').textContent = '❌ Error';
+            }
+        }
+
+        // Test 2: Load face recognition models
+        async function testLoadModels() {
+            const resultDiv = document.getElementById('test2Result');
+            resultDiv.classList.remove('hidden');
+            resultDiv.className = 'test-result info';
+            resultDiv.textContent = '⏳ Loading models from /models/...';
+            
+            try {
+                const startTime = Date.now();
+                
+                // Load all required models
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+                    faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+                    faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+                    faceapi.nets.ssdMobilenetv1.loadFromUri('/models')
+                ]);
+                
+                const loadTime = Date.now() - startTime;
+                modelsLoaded = true;
+                
+                resultDiv.className = 'test-result success';
+                resultDiv.textContent = `✅ Models loaded successfully in ${loadTime}ms
+Loaded models:
+- TinyFaceDetector: ${faceapi.nets.tinyFaceDetector.isLoaded}
+- FaceLandmark68Net: ${faceapi.nets.faceLandmark68Net.isLoaded}
+- FaceRecognitionNet: ${faceapi.nets.faceRecognitionNet.isLoaded}
+- SsdMobilenetv1: ${faceapi.nets.ssdMobilenetv1.isLoaded}`;
+                
+                document.getElementById('modelsStatus').textContent = '✅ Ready';
+            } catch (error) {
+                modelsLoaded = false;
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `❌ Failed to load models: ${error.message}
+Make sure model files exist in /public/models/`;
+                document.getElementById('modelsStatus').textContent = '❌ Failed';
+            }
+        }
+
+        // Test 3: Camera access
+        async function startCameraTest() {
+            const resultDiv = document.getElementById('test3Result');
+            const video = document.getElementById('videoElement');
+            resultDiv.classList.remove('hidden');
+            
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: 640, 
+                        height: 480,
+                        facingMode: 'user'
+                    } 
+                });
+                
+                video.srcObject = stream;
+                video.classList.remove('hidden');
+                
+                resultDiv.className = 'test-result success';
+                resultDiv.textContent = '✅ Camera started successfully';
+                document.getElementById('cameraStatus').textContent = '✅ Active';
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `❌ Camera error: ${error.message}`;
+                document.getElementById('cameraStatus').textContent = '❌ Denied';
+            }
+        }
+
+        async function detectFace() {
+            if (!modelsLoaded) {
+                alert('Please load models first (Test 2)');
+                return;
+            }
+            
+            const video = document.getElementById('videoElement');
+            const canvas = document.getElementById('canvasElement');
+            const resultDiv = document.getElementById('test3Result');
+            
+            if (!video.srcObject) {
+                alert('Please start camera first');
+                return;
+            }
+            
+            try {
+                const startTime = Date.now();
+                
+                // Detect faces with all features
+                const detection = await faceapi
+                    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+                
+                const detectTime = Date.now() - startTime;
+                
+                if (detection) {
+                    // Draw detection on canvas
+                    const displaySize = { width: video.width, height: video.height };
+                    faceapi.matchDimensions(canvas, displaySize);
+                    canvas.classList.remove('hidden');
+                    
+                    const resizedDetection = faceapi.resizeResults(detection, displaySize);
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Draw video frame
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // Draw detection box
+                    faceapi.draw.drawDetections(canvas, resizedDetection);
+                    faceapi.draw.drawFaceLandmarks(canvas, resizedDetection);
+                    
+                    resultDiv.className = 'test-result success';
+                    resultDiv.textContent = `✅ Face detected in ${detectTime}ms
+Confidence: ${(detection.detection.score * 100).toFixed(2)}%
+Face descriptor size: ${detection.descriptor.length} dimensions
+Box: x=${Math.round(detection.detection.box.x)}, y=${Math.round(detection.detection.box.y)}
+Size: ${Math.round(detection.detection.box.width)}x${Math.round(detection.detection.box.height)}`;
+                } else {
+                    resultDiv.className = 'test-result warning';
+                    resultDiv.textContent = `⚠️ No face detected (took ${detectTime}ms)
+Make sure your face is clearly visible in the camera`;
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `❌ Detection error: ${error.message}`;
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                document.getElementById('videoElement').classList.add('hidden');
+                document.getElementById('canvasElement').classList.add('hidden');
+                document.getElementById('cameraStatus').textContent = '⏹️ Stopped';
+            }
+        }
+
+        // Test 4: API Endpoints
+        async function testIdentifyAPI() {
+            const resultDiv = document.getElementById('test4Result');
+            resultDiv.classList.remove('hidden');
+            
+            try {
+                // Create a test descriptor (128 dimensions)
+                const testDescriptor = new Array(128).fill(0).map(() => Math.random());
+                
+                const response = await fetch('/api/face/identify-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ descriptor: testDescriptor })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.error && data.errorCode === 'NO_FACES_ENROLLED') {
+                        resultDiv.className = 'test-result warning';
+                        resultDiv.textContent = `⚠️ API works but no faces enrolled yet
+Response: ${JSON.stringify(data, null, 2)}`;
+                    } else {
+                        resultDiv.className = 'test-result success';
+                        resultDiv.textContent = `✅ Identify API working
+Response: ${JSON.stringify(data, null, 2)}`;
+                    }
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.textContent = `❌ API error: ${data.error || 'Unknown error'}`;
+                }
+                
+                document.getElementById('dbStatus').textContent = response.ok ? '✅ Connected' : '❌ Error';
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `❌ Network error: ${error.message}`;
+                document.getElementById('dbStatus').textContent = '❌ Failed';
+            }
+        }
+
+        async function testEnrollAPI() {
+            const resultDiv = document.getElementById('test4Result');
+            resultDiv.classList.remove('hidden');
+            
+            try {
+                // Create a test descriptor
+                const testDescriptor = new Array(128).fill(0).map(() => Math.random());
+                
+                const response = await fetch('/api/employee/face/enroll', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        userId: 'test-user-' + Date.now(),
+                        descriptor: testDescriptor,
+                        quality: 0.8
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.textContent = `✅ Enroll API working
+Response: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.textContent = `❌ API error: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `❌ Network error: ${error.message}`;
+            }
+        }
+
+        // Test 5: End-to-end test
+        async function runEndToEndTest() {
+            const resultDiv = document.getElementById('test5Result');
+            resultDiv.classList.remove('hidden');
+            resultDiv.className = 'test-result info';
+            
+            let testResults = [];
+            
+            try {
+                // Step 1: Check face-api.js
+                testResults.push('Step 1: Checking face-api.js...');
+                if (typeof faceapi === 'undefined') {
+                    throw new Error('face-api.js not loaded');
+                }
+                testResults.push('✅ face-api.js available');
+                
+                // Step 2: Load models if needed
+                if (!modelsLoaded) {
+                    testResults.push('Step 2: Loading models...');
+                    await testLoadModels();
+                    testResults.push('✅ Models loaded');
+                } else {
+                    testResults.push('✅ Models already loaded');
+                }
+                
+                // Step 3: Test camera
+                testResults.push('Step 3: Testing camera...');
+                if (!stream) {
+                    await startCameraTest();
+                }
+                testResults.push('✅ Camera working');
+                
+                // Step 4: Detect a face
+                testResults.push('Step 4: Detecting face...');
+                const video = document.getElementById('videoElement');
+                const detection = await faceapi
+                    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+                
+                if (!detection) {
+                    throw new Error('No face detected');
+                }
+                testResults.push(`✅ Face detected with ${(detection.detection.score * 100).toFixed(2)}% confidence`);
+                
+                // Step 5: Test API with real descriptor
+                testResults.push('Step 5: Testing API with real face descriptor...');
+                const descriptor = Array.from(detection.descriptor);
+                
+                const response = await fetch('/api/face/identify-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ descriptor })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.errorCode === 'NO_FACES_ENROLLED') {
+                        testResults.push('⚠️ API works but no enrolled faces to match');
+                    } else if (data.errorCode === 'FACE_NOT_RECOGNIZED') {
+                        testResults.push('⚠️ Face not recognized (not enrolled)');
+                    } else if (data.success) {
+                        testResults.push(`✅ Face recognized: ${data.data?.userName || 'Unknown'}`);
+                    }
+                } else {
+                    testResults.push(`❌ API error: ${data.error}`);
+                }
+                
+                resultDiv.className = 'test-result success';
+                resultDiv.textContent = testResults.join('\n');
+                
+            } catch (error) {
+                testResults.push(`❌ Error: ${error.message}`);
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = testResults.join('\n');
+            }
+        }
+
+        // Run initial test on page load
+        window.addEventListener('load', () => {
+            testFaceApiLibrary();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopCamera();
+        });
+    </script>
+</body>
+</html>
