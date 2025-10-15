@@ -49,7 +49,10 @@ export function ImprovedFaceEnrollmentModal({
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   
+  const [detectorLoaded, setDetectorLoaded] = useState(false)
   const [modelsLoaded, setModelsLoaded] = useState(false)
+  const [fullModelsLoaded, setFullModelsLoaded] = useState(false)
+  const [loadingStep, setLoadingStep] = useState('Initializing...')
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [capturing, setCapturing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -66,43 +69,66 @@ export function ImprovedFaceEnrollmentModal({
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const autoCaptureTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Load models
+  // Load models PROGRESSIVELY for faster perceived performance
   useEffect(() => {
     if (!isOpen) return
 
-    async function loadModels() {
+    async function loadModelsProgressively() {
       try {
-        logger.info('Loading face-api models for improved enrollment...')
-        
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+        const startTime = Date.now()
+        
+        // STEP 1: Load detector FIRST (189KB - FAST!)
+        setLoadingStep('Loading face detector...')
+        logger.info('📦 Loading tiny face detector (fast)...')
+        
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
+        
+        const detectorTime = Date.now() - startTime
+        logger.info(`✅ Detector loaded in ${detectorTime}ms`)
+        
+        // Enable detector and camera immediately!
+        setDetectorLoaded(true)
+        setModelsLoaded(true)
+        setLoadingStep('Detector ready! Starting camera...')
+        
+        // STEP 2: Load remaining models in background
+        setLoadingStep('Loading advanced models in background...')
+        logger.info('📦 Loading landmarks and recognition models...')
+        
         const timeout = new Promise<never>((_, reject) =>
           setTimeout(
-            () => reject(new Error('Model loading timeout')),
+            () => reject(new Error('Advanced models timeout')),
             isMobile ? 40000 : 30000
           )
         )
 
-        const loadPromise = Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+        const advancedModels = Promise.all([
           faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
           faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
         ])
 
-        await Promise.race([loadPromise, timeout])
-        setModelsLoaded(true)
-        logger.info('✅ Models loaded for improved enrollment')
+        await Promise.race([advancedModels, timeout])
+        
+        const totalTime = Date.now() - startTime
+        logger.info(`✅ All models loaded in ${totalTime}ms`)
+        
+        setFullModelsLoaded(true)
+        setLoadingStep('All models ready!')
+        
       } catch (err) {
         logger.error('Failed to load models', err as Error)
-        setError('Failed to load face recognition models. Please refresh.')
+        const errorMsg = err instanceof Error ? err.message : 'Failed to load models'
+        setError(errorMsg + ' Please refresh and try again.')
       }
     }
 
-    loadModels()
+    loadModelsProgressively()
   }, [isOpen])
 
-  // Start camera
+  // Start camera as soon as detector is loaded
   useEffect(() => {
-    if (!isOpen || !modelsLoaded) return
+    if (!isOpen || !detectorLoaded) return
 
     async function startCamera() {
       try {
@@ -221,6 +247,12 @@ export function ImprovedFaceEnrollmentModal({
   const handleCapture = async () => {
     if (!videoRef.current || capturing) return
 
+    // Check if full models loaded
+    if (!fullModelsLoaded) {
+      setError('Advanced models still loading. Please wait a moment...')
+      return
+    }
+
     setCapturing(true)
     setError(null)
 
@@ -332,10 +364,23 @@ export function ImprovedFaceEnrollmentModal({
           )}
 
           {/* Loading State */}
-          {!modelsLoaded && (
+          {!detectorLoaded && (
             <Card className="p-8 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-primary mx-auto mb-4"></div>
-              <p className="text-sm text-muted-foreground">Loading AI models...</p>
+              <p className="text-sm font-medium mb-1">{loadingStep}</p>
+              <p className="text-xs text-muted-foreground">Please wait...</p>
+            </Card>
+          )}
+          
+          {/* Background Loading Indicator */}
+          {detectorLoaded && !fullModelsLoaded && (
+            <Card className="bg-blue-500/10 border-blue-500 p-3">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-200 border-t-blue-500"></div>
+                <p className="text-blue-500 text-sm">
+                  {loadingStep} - Camera ready, you can position your face now.
+                </p>
+              </div>
             </Card>
           )}
 
