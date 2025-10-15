@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { serverDbManager } from '@/lib/server-db'
-import FaceMatcher from '@/lib/face-matching'
+import { findBestMatch, assessMatchQuality } from '@/lib/face-matching'
 import { logger, logApiRequest, logApiError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -30,12 +30,44 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Convert to Float32Array for matching
-    const descriptorArray = new Float32Array(descriptor)
-    
-    // Match face
+    // Match face against all enrolled faces
     logger.debug('Attempting to match face')
-    const match = await FaceMatcher.matchFace(descriptorArray)
+    
+    // Get all users with face embeddings
+    const users = await serverDbManager.getUsers()
+    const allEmbeddings = await Promise.all(
+      users.map(async (user) => {
+        const embeddings = await serverDbManager.getFaceEmbeddings(user.id)
+        return embeddings.map(emb => ({
+          userId: user.id,
+          embedding: emb.embedding,
+          embeddingId: emb.id,
+          user: user
+        }))
+      })
+    )
+
+    const knownEmbeddings = allEmbeddings.flat().filter(e => e.embedding)
+
+    if (knownEmbeddings.length === 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'No enrolled faces found. Please enroll your face first.',
+          errorCode: 'NO_FACES_ENROLLED'
+        },
+        { status: 404 }
+      )
+    }
+
+    // Find best matching user
+    const match = findBestMatch(
+      descriptor,
+      knownEmbeddings.map(e => ({
+        userId: e.userId,
+        embedding: e.embedding
+      }))
+    )
     
     if (!match) {
       return NextResponse.json(
@@ -48,9 +80,10 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Check confidence level
-    const confidenceLevel = FaceMatcher.getConfidenceLevel(match.confidence)
-    if (confidenceLevel === 'low') {
+    // Assess match quality
+    const matchQuality = assessMatchQuality(match)
+    
+    if (matchQuality.quality === 'poor') {
       return NextResponse.json(
         { 
           success: false, 
@@ -61,6 +94,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    
+    // Get matched embedding info
+    const matchedEmbedding = knownEmbeddings.find(e => e.userId === match.userId)
     
     // Get user details
     const user = await serverDbManager.getUser(match.userId)
@@ -125,9 +161,10 @@ export async function POST(request: NextRequest) {
       synced: true,
       metadata: {
         faceMatchConfidence: match.confidence,
-        confidenceLevel,
+        matchQuality: matchQuality.quality,
+        similarity: match.similarity,
         method: 'face-recognition',
-        matchedEmbeddingId: match.matchedEmbeddingId
+        matchedEmbeddingId: matchedEmbedding?.embeddingId
       },
       createdAt: new Date(),
       updatedAt: new Date()
@@ -157,7 +194,8 @@ export async function POST(request: NextRequest) {
         type: checkType,
         status,
         confidence: match.confidence,
-        confidenceLevel,
+        matchQuality: matchQuality.quality,
+        similarity: match.similarity,
         record: savedRecord
       }
     })

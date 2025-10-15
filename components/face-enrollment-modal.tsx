@@ -31,47 +31,86 @@ export function FaceEnrollmentModal({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  // Load face-api.js models
+  // Load face-api.js models (parallel loading)
   useEffect(() => {
     async function loadModels() {
       if (!isOpen) return
       
       try {
         logger.info('Loading face-api models...')
-        await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
-        await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
-        await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+        
+        // Load all models in parallel for faster loading
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+          faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+          faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+        ])
+        
         setModelsLoaded(true)
-        logger.info('Models loaded successfully')
+        logger.info('✅ Models loaded successfully')
       } catch (err) {
         logger.error('Failed to load models', err as Error)
-        setError('Failed to load face recognition models. Please ensure models are downloaded.')
+        setError('Failed to load face recognition models. Please refresh and try again.')
       }
     }
     
     loadModels()
   }, [isOpen])
 
-  // Start camera
+  // Start camera with improved error handling
   useEffect(() => {
     async function startCamera() {
-      if (!isOpen || !videoRef.current || !modelsLoaded) return
+      if (!isOpen || !modelsLoaded) return
 
       try {
-        logger.info('Starting camera...')
+        logger.info('🎥 Starting camera...')
+        
+        // Check if getUserMedia is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Camera API not supported')
+        }
+        
+        // Wait for video element
+        if (!videoRef.current) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+        
         const mediaStream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
-            width: 640, 
-            height: 480,
+            width: { ideal: 640 },
+            height: { ideal: 480 },
             facingMode: 'user'
-          } 
+          },
+          audio: false
         })
-        videoRef.current.srcObject = mediaStream
+        
+        logger.info('✅ Camera access granted')
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream
+          
+          // Force play
+          try {
+            await videoRef.current.play()
+          } catch (playErr) {
+            logger.warn('Auto-play failed', playErr)
+          }
+        }
+        
         setStream(mediaStream)
-        logger.info('Camera started')
-      } catch (err) {
-        logger.error('Camera error', err as Error)
-        setError('Failed to access camera. Please grant camera permissions.')
+        logger.info('✅ Camera ready')
+      } catch (err: any) {
+        logger.error('❌ Camera error', err as Error)
+        
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setError('Camera access denied. Please allow camera permission.')
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          setError('No camera found. Please connect a camera.')
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          setError('Camera is being used by another app.')
+        } else {
+          setError(`Camera error: ${err.message || 'Unknown error'}`)
+        }
       }
     }
 
@@ -196,9 +235,20 @@ export function FaceEnrollmentModal({
           )}
 
           {!modelsLoaded && !error && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-4 text-sm text-muted-foreground">Loading face recognition models...</p>
+            <div className="text-center py-12 space-y-4">
+              <div className="relative">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-primary mx-auto"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Camera className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+              <div>
+                <p className="text-lg font-semibold mb-2">Loading Face Recognition</p>
+                <p className="text-sm text-muted-foreground">Preparing AI models for enrollment...</p>
+                <div className="mt-4 w-48 mx-auto bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div className="h-full bg-primary animate-pulse" style={{ width: '75%' }}></div>
+                </div>
+              </div>
             </div>
           )}
 

@@ -60,22 +60,28 @@ export default function FaceCheckinPage() {
   const [cameraPermission, setCameraPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt')
   const [showPermissionHelper, setShowPermissionHelper] = useState(false)
 
-  // Load models (non-blocking for fast camera startup)
+  // Load models (parallel loading for speed)
   useEffect(() => {
     async function loadModels() {
       try {
-        logger.info('Loading face-api models in background...')
-        await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
-        await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
-        await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+        logger.info('Loading face-api models...')
+        
+        // Load models in parallel for faster loading
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+          faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+          faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+        ])
+        
         setModelsLoaded(true)
-        logger.info('Models loaded successfully')
+        logger.info('✅ All models loaded successfully')
       } catch (err) {
         logger.error('Failed to load models', err as Error)
         setError('Failed to load face recognition models. Please refresh the page.')
+        setModelsLoaded(false)
       }
     }
-    loadModels() // Non-blocking - camera can start before this completes
+    loadModels()
   }, [])
 
   // Check camera permission
@@ -101,64 +107,99 @@ export default function FaceCheckinPage() {
     checkCameraPermission()
   }, [])
 
-  // Start camera
+  // Start camera with improved error handling
   const startCamera = async () => {
-    // Don't block camera startup on models - they can load in parallel
     try {
-      logger.info('Requesting camera access...')
+      logger.info('🎥 Requesting camera access...')
       setError(null)
       setShowPermissionHelper(false)
       
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported in this browser')
+      }
+      
+      // Request camera access
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          width: 640, 
-          height: 480,
+          width: { ideal: 640 },
+          height: { ideal: 480 },
           facingMode: 'user'
-        } 
+        },
+        audio: false
       })
+      
+      logger.info('✅ Camera access granted')
+      
+      // Wait for video element to be ready
+      if (!videoRef.current) {
+        logger.warn('Video element not ready, waiting...')
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
         
-        // Wait for video metadata to load before updating state
+        // Force play the video
+        try {
+          await videoRef.current.play()
+          logger.info('✅ Video playing')
+        } catch (playErr) {
+          logger.warn('Video play failed, will try auto-play', playErr)
+        }
+        
+        // Set stream immediately and also on metadata load
+        setStream(mediaStream)
+        setCameraPermission('granted')
+        
+        // Also listen for metadata load event
         videoRef.current.onloadedmetadata = () => {
-          setStream(mediaStream)
-          setCameraPermission('granted')
-          logger.info('Camera started successfully')
+          logger.info('✅ Video metadata loaded')
           
           // Auto-identify user after camera starts (but wait for models)
           if (modelsLoaded) {
             setTimeout(() => identifyUser(), 1000)
           } else {
-            logger.info('Camera ready, waiting for models to load...')
-            // Will auto-identify when models finish loading
+            logger.info('⏳ Camera ready, waiting for models to load...')
           }
         }
+        
+        // Fallback: start identifying after 2 seconds if metadata doesn't load
+        setTimeout(() => {
+          if (modelsLoaded && videoRef.current && videoRef.current.readyState >= 2) {
+            logger.info('⏳ Starting identification (fallback)')
+            identifyUser()
+          }
+        }, 2000)
       } else {
-        // Fallback if video ref not ready
-        setStream(mediaStream)
-        setCameraPermission('granted')
+        throw new Error('Video element not available')
       }
     } catch (err: any) {
-      logger.error('Failed to access camera', err as Error)
+      logger.error('❌ Failed to access camera', err as Error)
       setCameraPermission('denied')
       
+      // Detailed error messages
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('Camera access denied. Please allow camera permission in your browser settings.')
+        setError('Camera access denied. Please click the camera icon in your browser address bar and allow access.')
         setShowPermissionHelper(true)
-      } else if (err.name === 'NotFoundError') {
-        setError('No camera found. Please connect a camera device.')
-      } else if (err.name === 'NotReadableError') {
-        setError('Camera is already in use by another application.')
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setError('No camera found. Please connect a camera device and refresh the page.')
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        setError('Camera is already in use by another application. Please close other apps using the camera.')
+      } else if (err.name === 'OverconstrainedError') {
+        setError('Camera does not meet the required specifications. Try a different camera.')
+      } else if (err.message === 'Camera API not supported in this browser') {
+        setError('Your browser does not support camera access. Please use Chrome, Firefox, or Edge.')
       } else {
-        setError('Failed to access camera. Please check your device settings.')
+        setError(`Failed to access camera: ${err.message || 'Unknown error'}`)
       }
     }
   }
 
-  // Auto-start camera when component mounts (don't wait for models)
+  // Auto-start camera when models are loaded
   useEffect(() => {
-    if (!stream && cameraPermission !== 'denied') {
+    if (modelsLoaded && !stream && cameraPermission !== 'denied') {
+      logger.info('🚀 Models loaded, starting camera...')
       startCamera()
     }
 
@@ -167,7 +208,7 @@ export default function FaceCheckinPage() {
         stream.getTracks().forEach(track => track.stop())
       }
     }
-  }, []) // Remove modelsLoaded dependency - don't wait for it
+  }, [modelsLoaded]) // Start camera after models load
   
   // Auto-identify when both camera AND models are ready
   useEffect(() => {
@@ -526,11 +567,36 @@ export default function FaceCheckinPage() {
             )}
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Loading State */}
+            {/* Hidden video element for camera initialization */}
             {!modelsLoaded && (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div>
-                <p className="mt-4 text-sm text-slate-400">Loading face recognition...</p>
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline
+                muted
+                style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+              />
+            )}
+
+            {/* Loading State Overlay */}
+            {!modelsLoaded && (
+              <div className="text-center py-12 space-y-4">
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-700 border-t-emerald-400 mx-auto"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Camera className="w-6 h-6 text-emerald-400" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-white mb-2">Loading Face Recognition</p>
+                  <p className="text-sm text-slate-400">Initializing AI models...</p>
+                  <div className="mt-4 w-48 mx-auto bg-slate-700 rounded-full h-2 overflow-hidden">
+                    <div className="h-full bg-emerald-400 animate-pulse" style={{ width: '75%' }}></div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    This may take a few seconds on first load...
+                  </p>
+                </div>
               </div>
             )}
 
