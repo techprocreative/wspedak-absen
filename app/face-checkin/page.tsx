@@ -60,24 +60,34 @@ export default function FaceCheckinPage() {
   const [cameraPermission, setCameraPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt')
   const [showPermissionHelper, setShowPermissionHelper] = useState(false)
 
-  // Load models (parallel loading for speed)
+  // Load models with timeout (especially important for mobile)
   useEffect(() => {
     async function loadModels() {
       try {
         logger.info('Loading face-api models...')
+        setError('Initializing AI models... This may take 10-30 seconds on mobile.')
         
-        // Load models in parallel for faster loading
-        await Promise.all([
+        // Create timeout promise (40 seconds for mobile)
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Model loading timeout. Please check your internet connection.')), 40000)
+        )
+        
+        // Load models with timeout
+        const loadPromise = Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
           faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
           faceapi.nets.faceRecognitionNet.loadFromUri('/models')
         ])
         
+        await Promise.race([loadPromise, timeout])
+        
         setModelsLoaded(true)
+        setError(null) // Clear loading message
         logger.info('✅ All models loaded successfully')
       } catch (err) {
         logger.error('Failed to load models', err as Error)
-        setError('Failed to load face recognition models. Please refresh the page.')
+        const errorMsg = err instanceof Error ? err.message : 'Failed to load face recognition models'
+        setError(`${errorMsg}. Please refresh the page or check your internet connection.`)
         setModelsLoaded(false)
       }
     }
@@ -576,16 +586,14 @@ export default function FaceCheckinPage() {
             )}
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Hidden video element for camera initialization */}
-            {!modelsLoaded && (
-              <video 
-                ref={videoRef} 
-                autoPlay 
-                playsInline
-                muted
-                style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
-              />
-            )}
+            {/* Video element - always rendered */}
+            <video 
+              ref={videoRef} 
+              autoPlay 
+              playsInline
+              muted
+              className={modelsLoaded && stream ? "w-full h-auto transform scale-x-[-1] rounded-lg" : "hidden"}
+            />
 
             {/* Loading State Overlay */}
             {!modelsLoaded && (
@@ -603,8 +611,26 @@ export default function FaceCheckinPage() {
                     <div className="h-full bg-emerald-400 animate-pulse" style={{ width: '75%' }}></div>
                   </div>
                   <p className="text-xs text-slate-500 mt-2">
-                    This may take a few seconds on first load...
+                    {error || 'This may take 10-30 seconds on mobile...'}
                   </p>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Please wait, do not close this page
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Camera Starting State */}
+            {modelsLoaded && !stream && cameraPermission !== 'denied' && !error && (
+              <div className="text-center py-12 space-y-4">
+                <div className="relative">
+                  <div className="animate-pulse rounded-full h-16 w-16 bg-slate-700 mx-auto flex items-center justify-center">
+                    <Camera className="w-8 h-8 text-emerald-400" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-white mb-2">Starting Camera</p>
+                  <p className="text-sm text-slate-400">Please allow camera access...</p>
                 </div>
               </div>
             )}
@@ -779,18 +805,11 @@ export default function FaceCheckinPage() {
               </div>
             )}
 
-            {/* Camera View */}
+            {/* Camera View - video element is already rendered above, just show overlay */}
             {modelsLoaded && stream && !result && (
               <>
                 <div className="relative bg-black rounded-lg overflow-hidden">
-                  <video 
-                    ref={videoRef} 
-                    autoPlay 
-                    playsInline
-                    muted
-                    className="w-full h-auto transform scale-x-[-1]"
-                    style={{ transform: 'scaleX(-1)' }}
-                  />
+                  {/* Video element is rendered at the top of CardContent */}
                   <div className="absolute top-4 right-4 flex flex-col gap-2">
                     {location && (
                       <div className="bg-emerald-500/20 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-2">
