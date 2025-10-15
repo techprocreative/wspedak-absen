@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAdminAuth } from '@/lib/api-auth-middleware'
 import { serverDbManager } from '@/lib/server-db'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 export const GET = withAdminAuth(async (request) => {
@@ -66,7 +67,7 @@ export const GET = withAdminAuth(async (request) => {
       data: stats
     })
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error)
+    logger.error('Error fetching dashboard stats', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch dashboard statistics' },
       { status: 500 }

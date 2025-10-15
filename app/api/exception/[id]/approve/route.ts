@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyJWT } from "@/lib/auth";
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 import { createClient } from "@supabase/supabase-js";
 
@@ -136,7 +137,7 @@ export async function POST(
       }, { status: 400 });
     }
   } catch (error: any) {
-    console.error("Error processing exception:", error);
+    logger.error('Error processing exception', error as Error);
     return NextResponse.json(
       { error: error.message || "Failed to process exception" },
       { status: 500 }

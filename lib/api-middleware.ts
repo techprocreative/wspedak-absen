@@ -4,6 +4,7 @@ import { createAuthRateLimit, createAccountLockout, BruteForceProtection } from 
 import { csrfProtection } from './security-middleware'
 import { logSecurityEvent } from './security-middleware'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Main API middleware wrapper
 export function withSecurityMiddleware(
   handler: (request: NextRequest, context?: any) => Promise<NextResponse>,
@@ -61,7 +62,7 @@ export function withSecurityMiddleware(
 
       return secureResponse
     } catch (error) {
-      console.error('API middleware error:', error)
+      logger.error('API middleware error', error as Error)
       
       // Log security event for errors
       logSecurityEvent('api_request_error', {
@@ -146,7 +147,7 @@ async function handleAuthentication(
 
     return null // Continue with request
   } catch (error) {
-    console.error('Authentication error:', error)
+    logger.error('Authentication error', error as Error)
     
     const response = NextResponse.json(
       {
@@ -307,7 +308,7 @@ export function withErrorHandler(
     try {
       return await handler(request, context)
     } catch (error) {
-      console.error('API handler error:', error)
+      logger.error('API handler error', error as Error)
       
       logSecurityEvent('api_handler_error', {
         path: new URL(request.url).pathname,
@@ -336,19 +337,19 @@ export function withRequestLogging(
     const startTime = Date.now()
     const url = new URL(request.url)
     
-    console.log(`[API] ${request.method} ${url.pathname} - Request started`)
+    logger.info('[API] ${request.method} ${url.pathname} - Request started')
     
     try {
       const response = await handler(request, context)
       const duration = Date.now() - startTime
       
-      console.log(`[API] ${request.method} ${url.pathname} - ${response.status} (${duration}ms)`)
+      logger.info('[API] ${request.method} ${url.pathname} - ${response.status} (${duration}ms)')
       
       return response
     } catch (error) {
       const duration = Date.now() - startTime
       
-      console.error(`[API] ${request.method} ${url.pathname} - Error (${duration}ms)`, error)
+      logger.error('[API] ${request.method} ${url.pathname} - Error (${duration}ms)', error as Error)
       throw error
     }
   }

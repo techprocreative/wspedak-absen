@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { serverDbManager } from '@/lib/server-db'
 import { hasAnyServerRole } from '@/lib/server-auth'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 async function checkAdminAuth(request: NextRequest) {
   if (!hasAnyServerRole(['admin', 'hr', 'manager'])) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
@@ -26,7 +27,7 @@ export async function GET(
     const list = await serverDbManager.getFaceEmbeddingsByUser(userId)
     return NextResponse.json({ success: true, data: list })
   } catch (error) {
-    console.error('Error fetching user face embeddings:', error)
+    logger.error('Error fetching user face embeddings', error as Error)
     return NextResponse.json({ success: false, error: 'Failed to fetch embeddings' }, { status: 500 })
   }
 }

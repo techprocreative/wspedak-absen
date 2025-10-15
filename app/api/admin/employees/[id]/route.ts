@@ -4,6 +4,7 @@ import { UserUpdateInput, userUpdateSchema } from '@/lib/validation-schemas'
 import { hasAnyServerRole } from '@/lib/server-auth'
 import { z } from 'zod'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Helper function to check admin authentication
 async function checkAdminAuth(request: NextRequest) {
   if (!hasAnyServerRole(['admin', 'hr', 'manager'])) {
@@ -41,7 +42,7 @@ export async function GET(
       data: user,
     })
   } catch (error) {
-    console.error('Error fetching employee:', error)
+    logger.error('Error fetching employee', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch employee' },
       { status: 500 }
@@ -90,7 +91,7 @@ export async function PUT(
       message: 'Employee updated successfully',
     })
   } catch (error) {
-    console.error('Error updating employee:', error)
+    logger.error('Error updating employee', error as Error)
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -135,7 +136,7 @@ export async function DELETE(
       message: 'Employee deleted successfully',
     })
   } catch (error) {
-    console.error('Error deleting employee:', error)
+    logger.error('Error deleting employee', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to delete employee' },
       { status: 500 }

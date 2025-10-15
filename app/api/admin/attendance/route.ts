@@ -4,6 +4,7 @@ import { AttendanceQueryInput, attendanceQuerySchema } from '@/lib/validation-sc
 import { withAdminAuth } from '@/lib/api-auth-middleware'
 import { z } from 'zod'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
@@ -162,7 +163,7 @@ export const GET = withAdminAuth(async (request) => {
       },
     })
   } catch (error) {
-    console.error('Error fetching attendance records:', error)
+    logger.error('Error fetching attendance records', error as Error)
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -218,7 +219,7 @@ export const POST = withAdminAuth(async (request) => {
       message: `${createdRecords.length} attendance records created successfully`,
     }, { status: 201 })
   } catch (error) {
-    console.error('Error creating attendance records:', error)
+    logger.error('Error creating attendance records', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to create attendance records' },
       { status: 500 }
@@ -262,7 +263,7 @@ export const PUT = withAdminAuth(async (request) => {
       message: `${updatedRecords.length} attendance records updated successfully`,
     })
   } catch (error) {
-    console.error('Error updating attendance records:', error)
+    logger.error('Error updating attendance records', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to update attendance records' },
       { status: 500 }
@@ -299,7 +300,7 @@ export const DELETE = withAdminAuth(async (request) => {
       message: `${deletedCount} attendance records deleted successfully`,
     })
   } catch (error) {
-    console.error('Error deleting attendance records:', error)
+    logger.error('Error deleting attendance records', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to delete attendance records' },
       { status: 500 }

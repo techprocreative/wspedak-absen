@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient, User, Session, RealtimeChannel } from '@supabase/supabase-js'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // These environment variables should be set in .env.local
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -268,7 +269,7 @@ class ConnectionPool {
           connection.isHealthy = true
           connection.lastHealthCheckAt = new Date()
         } catch (error) {
-          console.error('Connection health check failed:', error)
+          logger.error('Connection health check failed', error as Error)
           connection.isHealthy = false
           
           // Remove unhealthy connection
@@ -423,7 +424,7 @@ class SupabaseService {
       this.authState.isLoading = false
       this.notifyAuthListeners()
     } catch (error) {
-      console.error('Error initializing auth state:', error)
+      logger.error('Error initializing auth state', error as Error)
       this.authState.error = error as Error
       this.authState.isLoading = false
       this.notifyAuthListeners()
@@ -459,7 +460,7 @@ class SupabaseService {
         subscription.unsubscribe()
       })
     } catch (error) {
-      console.error('Error setting up auth state listener:', error)
+      logger.error('Error setting up auth state listener', error as Error)
     }
   }
 
@@ -489,7 +490,7 @@ class SupabaseService {
   private async retryFailedOperations(): Promise<void> {
     // This would be implemented to retry operations that failed while offline
     // For now, it's a placeholder for future implementation
-    console.log('Retrying failed operations...')
+    logger.info('Retrying failed operations...')
   }
 
   // Calculate retry delay with exponential backoff

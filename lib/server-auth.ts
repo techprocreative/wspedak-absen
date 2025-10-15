@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import { UserRole } from './auth'
 import crypto from 'crypto'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Server-side auth session interface
 export interface ServerAuthSession {
   user: {
@@ -51,7 +52,7 @@ export const getServerAuthSession = (): ServerAuthSession | null => {
 
     return null
   } catch (error) {
-    console.error('Error parsing auth session:', error)
+    logger.error('Error parsing auth session', error as Error)
     return null
   }
 }

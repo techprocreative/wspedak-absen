@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyJWT } from "@/lib/auth";
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 import { createClient } from "@supabase/supabase-js";
 
@@ -176,7 +177,7 @@ export async function GET(request: Request) {
       }
     });
   } catch (error: any) {
-    console.error("Error validating break:", error);
+    logger.error('Error validating break', error as Error);
     return NextResponse.json(
       { error: error.message || "Failed to validate break" },
       { status: 500 }

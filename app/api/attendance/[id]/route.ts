@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -21,7 +22,7 @@ export async function GET(
     
     return NextResponse.json({ data });
   } catch (error) {
-    console.error('Error fetching attendance record:', error);
+    logger.error('Error fetching attendance record', error as Error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -49,7 +50,7 @@ export async function PUT(
     
     return NextResponse.json({ data });
   } catch (error) {
-    console.error('Error updating attendance record:', error);
+    logger.error('Error updating attendance record', error as Error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -70,7 +71,7 @@ export async function DELETE(
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting attendance record:', error);
+    logger.error('Error deleting attendance record', error as Error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

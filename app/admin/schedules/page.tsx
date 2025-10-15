@@ -13,6 +13,7 @@ import { AdminForm, FormField, FormSection } from "@/components/admin/AdminForm"
 import { ConfirmModal, useConfirmModal } from "@/components/admin/ConfirmModal"
 import { ExportButton, ExportOption } from "@/components/admin/ExportButton"
 import { SearchFilter, FilterOption } from "@/components/admin/SearchFilter"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Layout is provided by app/admin/layout.tsx
 import { Plus, Edit, Trash2, Eye, Calendar, Clock, Users, MapPin, AlertCircle, CheckCircle, XCircle } from "lucide-react"
 import { z } from "zod"
@@ -111,10 +112,10 @@ export default function SchedulesPage() {
       if (data.success) {
         setSchedules(data.data || [])
       } else {
-        console.error("Failed to fetch schedules:", data.error)
+        logger.error('Failed to fetch schedules:', new Error(data.error))
       }
     } catch (error) {
-      console.error("Error fetching schedules:", error)
+      logger.error('Error fetching schedules', error as Error)
     } finally {
       setLoading(false)
     }
@@ -130,10 +131,10 @@ export default function SchedulesPage() {
       if (data.success) {
         setScheduleAssignments(data.data || [])
       } else {
-        console.error("Failed to fetch schedule assignments:", data.error)
+        logger.error('Failed to fetch schedule assignments:', new Error(data.error))
       }
     } catch (error) {
-      console.error("Error fetching schedule assignments:", error)
+      logger.error('Error fetching schedule assignments', error as Error)
     } finally {
       setLoading(false)
     }
@@ -156,11 +157,11 @@ export default function SchedulesPage() {
         setIsCreateModalOpen(false)
         fetchSchedules()
       } else {
-        console.error("Failed to create schedule:", data.error)
+        logger.error('Failed to create schedule:', new Error(data.error))
         throw new Error(data.error)
       }
     } catch (error) {
-      console.error("Error creating schedule:", error)
+      logger.error('Error creating schedule', error as Error)
       throw error
     }
   }
@@ -185,11 +186,11 @@ export default function SchedulesPage() {
         setSelectedSchedule(null)
         fetchSchedules()
       } else {
-        console.error("Failed to update schedule:", data.error)
+        logger.error('Failed to update schedule:', new Error(data.error))
         throw new Error(data.error)
       }
     } catch (error) {
-      console.error("Error updating schedule:", error)
+      logger.error('Error updating schedule', error as Error)
       throw error
     }
   }
@@ -211,7 +212,7 @@ export default function SchedulesPage() {
         if (data.success) {
           fetchSchedules()
         } else {
-          console.error("Failed to delete schedule:", data.error)
+          logger.error('Failed to delete schedule:', new Error(data.error))
         }
       },
     })
@@ -236,11 +237,11 @@ export default function SchedulesPage() {
         setSelectedAssignment(null)
         fetchScheduleAssignments()
       } else {
-        console.error("Failed to update assignment:", data.error)
+        logger.error('Failed to update assignment:', new Error(data.error))
         throw new Error(data.error)
       }
     } catch (error) {
-      console.error("Error updating assignment:", error)
+      logger.error('Error updating assignment', error as Error)
       throw error
     }
   }

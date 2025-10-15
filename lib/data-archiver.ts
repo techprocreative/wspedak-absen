@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Data Archiver
  * Provides data archiving for old records
@@ -88,7 +90,7 @@ export class DataArchiver {
       await this.deleteExpiredRecords();
     }
     
-    console.log('Data archiver initialized');
+    logger.info('Data archiver initialized');
   }
 
   /**
@@ -98,7 +100,7 @@ export class DataArchiver {
     // Stop archive interval
     this.stopArchiveInterval();
     
-    console.log('Data archiver cleaned up');
+    logger.info('Data archiver cleaned up');
   }
 
   /**
@@ -107,7 +109,7 @@ export class DataArchiver {
   private async initializeArchiveStore(): Promise<void> {
     // This would typically initialize the IndexedDB store for archived records
     // For now, this is just a placeholder
-    console.log('Archive store initialized');
+    logger.info('Archive store initialized');
   }
 
   /**
@@ -147,7 +149,7 @@ export class DataArchiver {
     this.isProcessing = true;
     
     try {
-      console.log('Starting archiving process');
+      logger.info('Starting archiving process');
       
       // Get all stores that need archiving
       const stores = ['attendance', 'users']; // Add more stores as needed
@@ -156,9 +158,9 @@ export class DataArchiver {
         await this.archiveStore(store);
       }
       
-      console.log('Archiving process completed');
+      logger.info('Archiving process completed');
     } catch (error) {
-      console.error('Error during archiving process:', error);
+      logger.error('Error during archiving process', error as Error);
     } finally {
       this.isProcessing = false;
     }
@@ -176,11 +178,11 @@ export class DataArchiver {
     const recordsToArchive = await this.getRecordsToArchive(store, cutoffDate);
     
     if (recordsToArchive.length === 0) {
-      console.log(`No records to archive in ${store}`);
+      logger.info('No records to archive in ${store}');
       return;
     }
     
-    console.log(`Archiving ${recordsToArchive.length} records from ${store}`);
+    logger.info('Archiving ${recordsToArchive.length} records from ${store}');
     
     // Process records in batches
     const batchSize = this.options.batchSize!;
@@ -198,16 +200,16 @@ export class DataArchiver {
         if (this.options.enablePerformanceOptimization) {
           const startTime = performance.now();
           if (startTime > this.options.maxProcessingTime!) {
-            console.warn(`Archiving process exceeded maximum time, stopping early`);
+            logger.warn('Archiving process exceeded maximum time, stopping early');
             break;
           }
         }
       } catch (error) {
-        console.error(`Error archiving batch ${i / batchSize + 1}:`, error);
+        logger.error('Error archiving batch ${i / batchSize + 1}', error as Error);
       }
     }
     
-    console.log(`Archived ${archivedCount} records from ${store}`);
+    logger.info('Archived ${archivedCount} records from ${store}');
   }
 
   /**
@@ -247,7 +249,7 @@ export class DataArchiver {
           archiveRecord.compressed = true;
           archiveRecord.size = this.calculateRecordSize(archiveRecord.data);
         } catch (error) {
-          console.error('Error compressing record:', error);
+          logger.error('Error compressing record', error as Error);
           // Keep uncompressed if compression fails
         }
       }
@@ -316,7 +318,7 @@ export class DataArchiver {
     // This is a placeholder implementation
     // In a real application, you would save the records to the IndexedDB archive store
     
-    console.log(`Saved ${records.length} archive records`);
+    logger.info('Saved ${records.length} archive records');
   }
 
   /**
@@ -326,27 +328,27 @@ export class DataArchiver {
     // This is a placeholder implementation
     // In a real application, you would delete the records from the original IndexedDB store
     
-    console.log(`Deleted ${records.length} original records from ${store}`);
+    logger.info('Deleted ${records.length} original records from ${store}');
   }
 
   /**
    * Delete expired archived records
    */
   async deleteExpiredRecords(): Promise<void> {
-    console.log('Deleting expired archived records');
+    logger.info('Deleting expired archived records');
     
     // Get expired records
     const expiredRecords = await this.getExpiredRecords();
     
     if (expiredRecords.length === 0) {
-      console.log('No expired archived records to delete');
+      logger.info('No expired archived records to delete');
       return;
     }
     
     // Delete expired records
     await this.deleteArchiveRecords(expiredRecords);
     
-    console.log(`Deleted ${expiredRecords.length} expired archived records`);
+    logger.info('Deleted ${expiredRecords.length} expired archived records');
   }
 
   /**
@@ -367,7 +369,7 @@ export class DataArchiver {
     // This is a placeholder implementation
     // In a real application, you would delete the records from the IndexedDB archive store
     
-    console.log(`Deleted ${records.length} archive records`);
+    logger.info('Deleted ${records.length} archive records');
   }
 
   /**
@@ -397,7 +399,7 @@ export class DataArchiver {
         const archivedRecord = await this.getArchivedRecord(recordId);
         
         if (!archivedRecord) {
-          console.warn(`Archived record not found: ${recordId}`);
+          logger.warn('Archived record not found: ${recordId}');
           continue;
         }
         
@@ -415,7 +417,7 @@ export class DataArchiver {
         
         restoredCount++;
       } catch (error) {
-        console.error(`Error restoring archived record ${recordId}:`, error);
+        logger.error('Error restoring archived record ${recordId}', error as Error);
       }
     }
     
@@ -440,7 +442,7 @@ export class DataArchiver {
     // This is a placeholder implementation
     // In a real application, you would save the record to the original IndexedDB store
     
-    console.log(`Restored record to ${store}`);
+    logger.info('Restored record to ${store}');
   }
 
   /**
@@ -450,7 +452,7 @@ export class DataArchiver {
     // This is a placeholder implementation
     // In a real application, you would delete the record from the IndexedDB archive store
     
-    console.log(`Deleted archive record: ${recordId}`);
+    logger.info('Deleted archive record: ${recordId}');
   }
 
   /**

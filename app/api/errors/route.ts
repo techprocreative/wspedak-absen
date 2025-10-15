@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { errorTracker } from '@/lib/error-tracker';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // GET /api/errors - Get error reports, groups, or alerts
 export async function GET(request: NextRequest) {
   try {
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error tracking API error:', error);
+    logger.error('Error tracking API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
       message: 'Error tracked successfully',
     });
   } catch (error) {
-    console.error('Error tracking API error:', error);
+    logger.error('Error tracking API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -163,7 +164,7 @@ export async function PATCH(request: NextRequest) {
       message,
     });
   } catch (error) {
-    console.error('Error tracking API error:', error);
+    logger.error('Error tracking API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -180,7 +181,7 @@ export async function DELETE(request: NextRequest) {
       message: 'All errors cleared',
     });
   } catch (error) {
-    console.error('Error tracking API error:', error);
+    logger.error('Error tracking API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

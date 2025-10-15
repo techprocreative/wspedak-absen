@@ -10,8 +10,10 @@ const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jest-environment-jsdom',
   testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/', '<rootDir>/e2e/'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^.+\\.module\\.(css|sass|scss)$': 'identity-obj-proxy',
+    '^.+\\.(jpg|jpeg|png|gif|webp|avif|svg)$': '<rootDir>/__mocks__/fileMock.js',
   },
   collectCoverageFrom: [
     'components/**/*.{js,jsx,ts,tsx}',
@@ -46,12 +48,6 @@ const customJestConfig = {
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   verbose: true,
-  // Add support for mocking CSS and image imports
-  modulePathMappings: {
-    '^.+\\.module\\.(css|sass|scss)$': 'identity-obj-proxy',
-    '^.+\\.(jpg|jpeg|png|gif|webp|avif|svg)$': '<rootDir>/__mocks__/fileMock.js',
-  },
-  // Setup for testing environment
   setupFiles: ['<rootDir>/jest.polyfills.js'],
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -90,7 +91,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({ data: stats });
   } catch (error) {
-    console.error('Error calculating attendance statistics:', error);
+    logger.error('Error calculating attendance statistics', error as Error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

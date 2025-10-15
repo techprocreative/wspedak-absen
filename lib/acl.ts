@@ -2,6 +2,7 @@ import { secureStorage } from './secure-storage'
 import { UserRole } from './auth'
 import { hasPermission } from './permissions'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // ACL configuration
 const ACL_RULES_KEY = 'acl_rules'
 const ACL_RESOURCES_KEY = 'acl_resources'
@@ -121,7 +122,7 @@ export class ACLManager {
     try {
       return secureStorage.getItem<ACLRule[]>(ACL_RULES_KEY) || []
     } catch (error) {
-      console.error('Error loading ACL rules:', error)
+      logger.error('Error loading ACL rules', error as Error)
       return []
     }
   }
@@ -131,7 +132,7 @@ export class ACLManager {
     try {
       secureStorage.setItem(ACL_RULES_KEY, this.rules)
     } catch (error) {
-      console.error('Error saving ACL rules:', error)
+      logger.error('Error saving ACL rules', error as Error)
     }
   }
 
@@ -140,7 +141,7 @@ export class ACLManager {
     try {
       return secureStorage.getItem<ACLResource[]>(ACL_RESOURCES_KEY) || []
     } catch (error) {
-      console.error('Error loading ACL resources:', error)
+      logger.error('Error loading ACL resources', error as Error)
       return []
     }
   }
@@ -150,7 +151,7 @@ export class ACLManager {
     try {
       secureStorage.setItem(ACL_RESOURCES_KEY, this.resources)
     } catch (error) {
-      console.error('Error saving ACL resources:', error)
+      logger.error('Error saving ACL resources', error as Error)
     }
   }
 

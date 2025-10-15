@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * System Monitoring for DS223J Hardware
  * Provides comprehensive system monitoring optimized for DS223J constraints
@@ -237,7 +239,7 @@ export class SystemMonitor {
         }
       }
     } catch (error) {
-      console.error('Error loading persisted system data:', error);
+      logger.error('Error loading persisted system data', error as Error);
     }
   }
 
@@ -262,7 +264,7 @@ export class SystemMonitor {
       
       localStorage.setItem(this.options.persistenceKey!, JSON.stringify(data));
     } catch (error) {
-      console.error('Error persisting system data:', error);
+      logger.error('Error persisting system data', error as Error);
     }
   }
 
@@ -664,7 +666,7 @@ export class SystemMonitor {
       try {
         callback(alert);
       } catch (error) {
-        console.error('Error in system alert callback:', error);
+        logger.error('Error in system alert callback', error as Error);
       }
     });
   }

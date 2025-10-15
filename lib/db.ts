@@ -1,6 +1,7 @@
 import { get, set, del, clear, keys, createStore } from 'idb-keyval'
 import { openDB, DBSchema, IDBPDatabase, IDBPTransaction } from 'idb'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Database store names
 export const DB_STORES = {
   ATTENDANCE: 'attendance',
@@ -191,13 +192,13 @@ export class StorageManager {
           }
         },
         blocked() {
-          console.error('Database upgrade blocked by other tabs')
+          logger.error('Database upgrade blocked by other tabs', new Error())
         },
         blocking() {
-          console.log('Database upgrade blocking other tabs')
+          logger.info('Database upgrade blocking other tabs')
         },
         terminated() {
-          console.error('Database connection terminated')
+          logger.error('Database connection terminated', new Error())
           db = null
         },
       })
@@ -207,7 +208,7 @@ export class StorageManager {
 
       return db
     } catch (error) {
-      console.error('Error initializing database:', error)
+      logger.error('Error initializing database', error as Error)
       throw error
     }
   }
@@ -226,7 +227,7 @@ export class StorageManager {
         })
       }
     } catch (error) {
-      console.error('Error initializing default settings:', error)
+      logger.error('Error initializing default settings', error as Error)
       throw error
     }
   }
@@ -250,7 +251,7 @@ export class StorageManager {
       await transaction.done
       return result
     } catch (error) {
-      console.error('Transaction failed, rolling back:', error)
+      logger.error('Transaction failed, rolling back', error as Error)
       transaction.abort()
       throw error
     }
@@ -409,7 +410,7 @@ export class StorageManager {
 
       return records
     } catch (error) {
-      console.error('Error getting attendance records:', error)
+      logger.error('Error getting attendance records', error as Error)
       return []
     }
   }
@@ -420,7 +421,7 @@ export class StorageManager {
       const result = await db.get(DB_STORES.ATTENDANCE, id)
       return result || null
     } catch (error) {
-      console.error(`Error getting attendance record ${id}:`, error)
+      logger.error('Error getting attendance record ${id}', error as Error)
       return null
     }
   }
@@ -431,7 +432,7 @@ export class StorageManager {
       record.updatedAt = new Date()
       await db.put(DB_STORES.ATTENDANCE, record)
     } catch (error) {
-      console.error('Error saving attendance record:', error)
+      logger.error('Error saving attendance record', error as Error)
       throw error
     }
   }
@@ -441,7 +442,7 @@ export class StorageManager {
       const db = await this.getDB()
       await db.delete(DB_STORES.ATTENDANCE, id)
     } catch (error) {
-      console.error(`Error deleting attendance record ${id}:`, error)
+      logger.error('Error deleting attendance record ${id}', error as Error)
       throw error
     }
   }
@@ -509,7 +510,7 @@ export class StorageManager {
 
       return users
     } catch (error) {
-      console.error('Error getting users:', error)
+      logger.error('Error getting users', error as Error)
       return []
     }
   }
@@ -520,7 +521,7 @@ export class StorageManager {
       const result = await db.get(DB_STORES.USERS, id)
       return result || null
     } catch (error) {
-      console.error(`Error getting user ${id}:`, error)
+      logger.error('Error getting user ${id}', error as Error)
       return null
     }
   }
@@ -536,7 +537,7 @@ export class StorageManager {
       const result = await index.get(email)
       return result || null
     } catch (error) {
-      console.error(`Error getting user by email ${email}:`, error)
+      logger.error('Error getting user by email ${email}', error as Error)
       return null
     }
   }
@@ -547,7 +548,7 @@ export class StorageManager {
       user.updatedAt = new Date()
       await db.put(DB_STORES.USERS, user)
     } catch (error) {
-      console.error('Error saving user:', error)
+      logger.error('Error saving user', error as Error)
       throw error
     }
   }
@@ -557,7 +558,7 @@ export class StorageManager {
       const db = await this.getDB()
       await db.delete(DB_STORES.USERS, id)
     } catch (error) {
-      console.error(`Error deleting user ${id}:`, error)
+      logger.error('Error deleting user ${id}', error as Error)
       throw error
     }
   }
@@ -624,7 +625,7 @@ export class StorageManager {
 
       return items
     } catch (error) {
-      console.error('Error getting sync queue items:', error)
+      logger.error('Error getting sync queue items', error as Error)
       return []
     }
   }
@@ -634,7 +635,7 @@ export class StorageManager {
       const db = await this.getDB()
       await db.add(DB_STORES.SYNC_QUEUE, item)
     } catch (error) {
-      console.error('Error adding sync queue item:', error)
+      logger.error('Error adding sync queue item', error as Error)
       throw error
     }
   }
@@ -644,7 +645,7 @@ export class StorageManager {
       const db = await this.getDB()
       await db.put(DB_STORES.SYNC_QUEUE, item)
     } catch (error) {
-      console.error('Error updating sync queue item:', error)
+      logger.error('Error updating sync queue item', error as Error)
       throw error
     }
   }
@@ -654,7 +655,7 @@ export class StorageManager {
       const db = await this.getDB()
       await db.delete(DB_STORES.SYNC_QUEUE, id)
     } catch (error) {
-      console.error(`Error removing sync queue item ${id}:`, error)
+      logger.error('Error removing sync queue item ${id}', error as Error)
       throw error
     }
   }
@@ -666,7 +667,7 @@ export class StorageManager {
       const result = await db.get(DB_STORES.OFFLINE_DATA, 'offlineData')
       return result || null
     } catch (error) {
-      console.error('Error getting offline data:', error)
+      logger.error('Error getting offline data', error as Error)
       return null
     }
   }
@@ -676,7 +677,7 @@ export class StorageManager {
       const db = await this.getDB()
       await db.put(DB_STORES.OFFLINE_DATA, { ...data, id: 'offlineData' })
     } catch (error) {
-      console.error('Error saving offline data:', error)
+      logger.error('Error saving offline data', error as Error)
       throw error
     }
   }
@@ -688,7 +689,7 @@ export class StorageManager {
       const result = await db.get(DB_STORES.SETTINGS, 'default')
       return result || null
     } catch (error) {
-      console.error('Error getting settings:', error)
+      logger.error('Error getting settings', error as Error)
       return null
     }
   }
@@ -699,7 +700,7 @@ export class StorageManager {
       settings.lastUpdated = new Date()
       await db.put(DB_STORES.SETTINGS, settings)
     } catch (error) {
-      console.error('Error saving settings:', error)
+      logger.error('Error saving settings', error as Error)
       throw error
     }
   }
@@ -717,7 +718,7 @@ export class StorageManager {
             if (storeObj) {
               await (storeObj as any).clear()
             } else {
-              console.warn(`Store ${store} not found in transaction`)
+              logger.warn('Store ${store} not found in transaction')
             }
           }
         }
@@ -726,7 +727,7 @@ export class StorageManager {
       // Reinitialize default settings
       await this.initializeDefaultSettings()
     } catch (error) {
-      console.error('Error clearing all data:', error)
+      logger.error('Error clearing all data', error as Error)
       throw error
     }
   }
@@ -757,7 +758,7 @@ export const attendanceDB = {
     try {
       return await storageManager.getAttendanceRecords()
     } catch (error) {
-      console.error('Error getting attendance records:', error)
+      logger.error('Error getting attendance records', error as Error)
       return []
     }
   },
@@ -767,7 +768,7 @@ export const attendanceDB = {
     try {
       return await storageManager.getAttendanceRecord(id)
     } catch (error) {
-      console.error(`Error getting attendance record ${id}:`, error)
+      logger.error('Error getting attendance record ${id}', error as Error)
       return null
     }
   },
@@ -777,7 +778,7 @@ export const attendanceDB = {
     try {
       await storageManager.saveAttendanceRecord(record)
     } catch (error) {
-      console.error('Error saving attendance record:', error)
+      logger.error('Error saving attendance record', error as Error)
       throw error
     }
   },
@@ -787,7 +788,7 @@ export const attendanceDB = {
     try {
       await storageManager.deleteAttendanceRecord(id)
     } catch (error) {
-      console.error(`Error deleting attendance record ${id}:`, error)
+      logger.error('Error deleting attendance record ${id}', error as Error)
       throw error
     }
   },
@@ -798,7 +799,7 @@ export const attendanceDB = {
       const db = await storageManager.getDB()
       await db.clear(DB_STORES.ATTENDANCE)
     } catch (error) {
-      console.error('Error clearing attendance records:', error)
+      logger.error('Error clearing attendance records', error as Error)
       throw error
     }
   },
@@ -811,7 +812,7 @@ export const usersDB = {
     try {
       return await storageManager.getUsers()
     } catch (error) {
-      console.error('Error getting users:', error)
+      logger.error('Error getting users', error as Error)
       return []
     }
   },
@@ -821,7 +822,7 @@ export const usersDB = {
     try {
       return await storageManager.getUser(id)
     } catch (error) {
-      console.error(`Error getting user ${id}:`, error)
+      logger.error('Error getting user ${id}', error as Error)
       return null
     }
   },
@@ -831,7 +832,7 @@ export const usersDB = {
     try {
       await storageManager.saveUser(user)
     } catch (error) {
-      console.error('Error saving user:', error)
+      logger.error('Error saving user', error as Error)
       throw error
     }
   },
@@ -841,7 +842,7 @@ export const usersDB = {
     try {
       await storageManager.deleteUser(id)
     } catch (error) {
-      console.error(`Error deleting user ${id}:`, error)
+      logger.error('Error deleting user ${id}', error as Error)
       throw error
     }
   },
@@ -852,7 +853,7 @@ export const usersDB = {
       const db = await storageManager.getDB()
       await db.clear(DB_STORES.USERS)
     } catch (error) {
-      console.error('Error clearing users:', error)
+      logger.error('Error clearing users', error as Error)
       throw error
     }
   },
@@ -865,7 +866,7 @@ export const syncQueueDB = {
     try {
       return await storageManager.getSyncQueueItems()
     } catch (error) {
-      console.error('Error getting sync queue items:', error)
+      logger.error('Error getting sync queue items', error as Error)
       return []
     }
   },
@@ -875,7 +876,7 @@ export const syncQueueDB = {
     try {
       await storageManager.addSyncQueueItem(item)
     } catch (error) {
-      console.error('Error adding item to sync queue:', error)
+      logger.error('Error adding item to sync queue', error as Error)
       throw error
     }
   },
@@ -885,7 +886,7 @@ export const syncQueueDB = {
     try {
       await storageManager.removeSyncQueueItem(id)
     } catch (error) {
-      console.error(`Error removing item ${id} from sync queue:`, error)
+      logger.error('Error removing item ${id} from sync queue', error as Error)
       throw error
     }
   },
@@ -896,7 +897,7 @@ export const syncQueueDB = {
       const db = await storageManager.getDB()
       await db.clear(DB_STORES.SYNC_QUEUE)
     } catch (error) {
-      console.error('Error clearing sync queue:', error)
+      logger.error('Error clearing sync queue', error as Error)
       throw error
     }
   },
@@ -909,7 +910,7 @@ export const offlineDataDB = {
     try {
       return await storageManager.getOfflineData()
     } catch (error) {
-      console.error('Error getting offline data:', error)
+      logger.error('Error getting offline data', error as Error)
       return null
     }
   },
@@ -919,7 +920,7 @@ export const offlineDataDB = {
     try {
       await storageManager.saveOfflineData(data)
     } catch (error) {
-      console.error('Error saving offline data:', error)
+      logger.error('Error saving offline data', error as Error)
       throw error
     }
   },
@@ -930,7 +931,7 @@ export const offlineDataDB = {
       const db = await storageManager.getDB()
       await db.clear(DB_STORES.OFFLINE_DATA)
     } catch (error) {
-      console.error('Error clearing offline data:', error)
+      logger.error('Error clearing offline data', error as Error)
       throw error
     }
   },
@@ -953,7 +954,7 @@ export const initializeDB = async (): Promise<void> => {
       })
     }
   } catch (error) {
-    console.error('Error initializing database:', error)
+    logger.error('Error initializing database', error as Error)
     throw error
   }
 }

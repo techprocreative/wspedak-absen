@@ -7,6 +7,7 @@
 import { systemMonitor } from '@/lib/monitoring/system-monitor';
 import { predictiveAnalytics } from '@/lib/analytics/predictive-analytics';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Alert interfaces
 export interface Alert {
   id: string;
@@ -395,7 +396,7 @@ class AlertManager {
         await this.processNotifications(alert);
       }
     } catch (error) {
-      console.error('Error processing alerts:', error);
+      logger.error('Error processing alerts', error as Error);
     } finally {
       this.isProcessing = false;
     }
@@ -430,7 +431,7 @@ class AlertManager {
           await this.executeEscalationAction(alert.id, actionId);
         }
 
-        console.log(`Alert ${alert.id} escalated to level ${rule.level}`);
+        logger.info('Alert ${alert.id} escalated to level ${rule.level}');
       }
     }
   }
@@ -446,7 +447,7 @@ class AlertManager {
         } catch (error) {
           notification.retryCount++;
           notification.error = error instanceof Error ? error.message : String(error);
-          console.error(`Failed to send notification ${notification.id}:`, error);
+          logger.error('Failed to send notification ${notification.id}', error as Error);
         }
       }
     }
@@ -460,7 +461,7 @@ class AlertManager {
     }
 
     // Mock implementation - in real system, this would integrate with actual notification services
-    console.log(`Sending ${notification.channel} notification to ${notification.recipient}: ${notification.message}`);
+    logger.info('Sending ${notification.channel} notification to ${notification.recipient}: ${notification.message}');
     
     // Simulate sending delay
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -591,7 +592,7 @@ class AlertManager {
     );
 
     if (!template) {
-      console.warn(`No template found for rule ${rule.id}`);
+      logger.warn('No template found for rule ${rule.id}');
       return;
     }
 
@@ -616,7 +617,7 @@ class AlertManager {
     rule.lastTriggered = new Date();
     rule.triggerCount++;
 
-    console.log(`Rule ${rule.name} triggered, created alert ${alert.id}`);
+    logger.info('Rule ${rule.name} triggered, created alert ${alert.id}');
   }
 
   // Create alert from template
@@ -765,7 +766,7 @@ class AlertManager {
   // Execute escalation action
   private async executeEscalationAction(alertId: string, actionName: string): Promise<any> {
     // Mock implementation for escalation actions
-    console.log(`Executing escalation action '${actionName}' for alert ${alertId}`);
+    logger.info('Executing escalation action', { actionName, alertId });
     
     switch (actionName) {
       case 'send_notification':

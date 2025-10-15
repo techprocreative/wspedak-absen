@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyJWT } from "@/lib/auth";
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 import { createClient } from "@supabase/supabase-js";
 
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
       }
     });
   } catch (error: any) {
-    console.error("Error ending break:", error);
+    logger.error('Error ending break', error as Error);
     return NextResponse.json(
       { error: error.message || "Failed to end break" },
       { status: 500 }

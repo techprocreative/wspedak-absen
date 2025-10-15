@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { alertManager } from '@/lib/alerts/alert-manager';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error fetching alerts:', error);
+    logger.error('Error fetching alerts', error as Error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch alerts' },
       { status: 500 }
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
       error: 'Invalid request'
     }, { status: 400 });
   } catch (error) {
-    console.error('Error in alerts POST:', error);
+    logger.error('Error in alerts POST', error as Error);
     return NextResponse.json(
       { success: false, error: 'Failed to process request' },
       { status: 500 }

@@ -4,6 +4,7 @@ import { UserCreateInput, UserUpdateInput, UserQueryInput, userCreateSchema, use
 import { withAdminAuth } from '@/lib/api-auth-middleware'
 import { z } from 'zod'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
@@ -81,7 +82,7 @@ export const GET = withAdminAuth(async (request) => {
       },
     })
   } catch (error) {
-    console.error('Error fetching employees:', error)
+    logger.error('Error fetching employees', error as Error)
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -138,7 +139,7 @@ export const POST = withAdminAuth(async (request) => {
       message: 'Employee created successfully',
     }, { status: 201 })
   } catch (error) {
-    console.error('Error creating employee:', error)
+    logger.error('Error creating employee', error as Error)
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -198,7 +199,7 @@ export const PUT = withAdminAuth(async (request) => {
       message: `${updatedUsers.length} employees updated successfully`,
     })
   } catch (error) {
-    console.error('Error updating employees:', error)
+    logger.error('Error updating employees', error as Error)
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -243,7 +244,7 @@ export const DELETE = withAdminAuth(async (request) => {
       message: `${deletedCount} employees deleted successfully`,
     })
   } catch (error) {
-    console.error('Error deleting employees:', error)
+    logger.error('Error deleting employees', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to delete employees' },
       { status: 500 }

@@ -4,16 +4,17 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect } from 'react';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export default function OfflinePage() {
   useEffect(() => {
     // Register service worker if not already registered
     if ('serviceWorker' in navigator && !navigator.serviceWorker.controller) {
       navigator.serviceWorker.register('/service-worker.js')
         .then(registration => {
-          console.log('Service Worker registered with scope:', registration.scope);
+          logger.info('Service Worker registered with scope', { value: registration.scope });
         })
         .catch(error => {
-          console.error('Service Worker registration failed:', error);
+          logger.error('Service Worker registration failed', error as Error);
         });
     }
   }, []);

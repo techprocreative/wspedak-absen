@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { serverDbManager } from '@/lib/server-db'
 import { hasAnyServerRole } from '@/lib/server-auth'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Helper function to check admin authentication
 async function checkAdminAuth(request: NextRequest) {
   if (!hasAnyServerRole(['admin', 'hr', 'manager'])) {
@@ -44,7 +45,7 @@ export async function POST(
       message: `Settings for ${params.section} reset to default values successfully`,
     })
   } catch (error) {
-    console.error('Error resetting settings:', error)
+    logger.error('Error resetting settings', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to reset settings' },
       { status: 500 }

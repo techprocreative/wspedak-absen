@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { healthCheckManager } from '@/lib/health-check';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // GET /api/health - Get current health status
 export async function GET(request: NextRequest) {
   try {
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response, { status: statusCode });
   } catch (error) {
-    console.error('Health check API error:', error);
+    logger.error('Health check API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
       duration: healthResult.duration,
     });
   } catch (error) {
-    console.error('Force health check API error:', error);
+    logger.error('Force health check API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

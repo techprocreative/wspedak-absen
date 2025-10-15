@@ -6,6 +6,7 @@
 
 import { performance } from 'perf_hooks';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // System health metrics interface
 export interface SystemMetrics {
   timestamp: Date;
@@ -163,7 +164,7 @@ class SystemMonitor {
 
       this.addMetrics(metrics);
     } catch (error) {
-      console.error('Error collecting system metrics:', error);
+      logger.error('Error collecting system metrics', error as Error);
       this.createAlert({
         type: 'performance',
         severity: 'medium',
@@ -353,7 +354,7 @@ class SystemMonitor {
     }
 
     // Log alert
-    console.warn(`System Alert [${alert.severity.toUpperCase()}]: ${alert.title} - ${alert.message}`);
+    logger.warn('System Alert [${alert.severity.toUpperCase()}]: ${alert.title} - ${alert.message}');
   }
 
   // Get current metrics

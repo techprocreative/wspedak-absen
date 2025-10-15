@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Define interfaces for data export
 export interface ExportResult {
   success: boolean
@@ -436,8 +437,8 @@ export class DataExporter {
   // Schedule export
   static async scheduleExport(schedule: ExportSchedule): Promise<void> {
     // In a real implementation, this would set up a scheduled job
-    console.log(`Scheduling export: ${schedule.name}`)
-    console.log(`Next run: ${schedule.nextRun}`)
+    logger.info('Scheduling export: ${schedule.name}')
+    logger.info('Next run: ${schedule.nextRun}')
   }
 
   // Get available fields for a data type

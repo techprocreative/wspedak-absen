@@ -6,6 +6,7 @@ import { createServerSupabaseClient, checkAdminAuth } from '@/lib/supabase-serve
 import { checkRateLimit, uploadRateLimiter } from '@/lib/rate-limiter'
 import { uploadFileValidator } from '@/lib/file-validator'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 const MAX_IMPORT_ROWS = 10000
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
       data: { totalRows: parsedData.length, validRows: validRows.length, invalidRows: parsedData.length - validRows.length, insertedCount, updatedCount, skippedCount, errors, warnings }
     })
   } catch (error: any) {
-    console.error('Import error:', error)
+    logger.error('Import error', error as Error)
     return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 })
   }
 }

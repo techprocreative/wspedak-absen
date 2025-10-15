@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 /**
  * Toast notification helper
  * Simple toast notifications for user feedback
@@ -18,7 +19,7 @@ export function showToast(options: ToastOptions) {
 
   // For now, use alert/console as fallback
   // In production, this should use a proper toast library
-  console.log(`[${type.toUpperCase()}] ${title ? title + ': ' : ''}${description}`)
+  logger.debug('Toast notification', { type, title, description });
   
   // You can integrate with shadcn/ui toast here
   if (typeof window !== 'undefined') {

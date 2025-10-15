@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 type SeedBody = {
   email?: string
   password?: string
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest) {
       message: created ? 'Admin user created and seeded.' : 'Admin user ensured/updated.',
     })
   } catch (error: any) {
-    console.error('Admin seed error:', error)
+    logger.error('Admin seed error', error as Error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

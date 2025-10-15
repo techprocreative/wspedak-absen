@@ -13,6 +13,7 @@ import { AdminForm, FormField, FormSection } from "@/components/admin/AdminForm"
 import { ConfirmModal, useConfirmModal } from "@/components/admin/ConfirmModal"
 import { ExportButton, ExportOption } from "@/components/admin/ExportButton"
 import { SearchFilter, FilterOption } from "@/components/admin/SearchFilter"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Layout is provided by app/admin/layout.tsx
 import { UserCreateInput, UserUpdateInput, userCreateSchema, userUpdateSchema } from "@/lib/validation-schemas"
 import { Plus, Edit, Trash2, Eye, Users, UserCheck, UserX, Settings, Camera } from "lucide-react"
@@ -87,10 +88,10 @@ export default function EmployeesPage() {
           total: data.pagination.total,
         }))
       } else {
-        console.error("Failed to fetch users:", data.error)
+        logger.error('Failed to fetch users:', new Error(data.error))
       }
     } catch (error) {
-      console.error("Error fetching users:", error)
+      logger.error('Error fetching users', error as Error)
     } finally {
       setLoading(false)
     }
@@ -115,11 +116,11 @@ export default function EmployeesPage() {
         setIsCreateModalOpen(false)
         fetchUsers()
       } else {
-        console.error("Failed to create user:", data.error)
+        logger.error('Failed to create user:', new Error(data.error))
         throw new Error(data.error)
       }
     } catch (error) {
-      console.error("Error creating user:", error)
+      logger.error('Error creating user', error as Error)
       throw error
     }
   }
@@ -146,11 +147,11 @@ export default function EmployeesPage() {
         setSelectedUser(null)
         fetchUsers()
       } else {
-        console.error("Failed to update user:", data.error)
+        logger.error('Failed to update user:', new Error(data.error))
         throw new Error(data.error)
       }
     } catch (error) {
-      console.error("Error updating user:", error)
+      logger.error('Error updating user', error as Error)
       throw error
     }
   }
@@ -174,7 +175,7 @@ export default function EmployeesPage() {
         if (data.success) {
           fetchUsers()
         } else {
-          console.error("Failed to delete user:", data.error)
+          logger.error('Failed to delete user:', new Error(data.error))
         }
       },
     })
@@ -203,7 +204,7 @@ export default function EmployeesPage() {
         if (data.success) {
           fetchUsers()
         } else {
-          console.error("Failed to delete users:", data.error)
+          logger.error('Failed to delete users:', new Error(data.error))
         }
       },
     })
@@ -235,10 +236,10 @@ export default function EmployeesPage() {
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
       } else {
-        console.error("Failed to export data")
+        logger.error('Failed to export data', new Error())
       }
     } catch (error) {
-      console.error("Error exporting data:", error)
+      logger.error('Error exporting data', error as Error)
     }
   }
 

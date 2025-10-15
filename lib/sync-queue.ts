@@ -2,6 +2,7 @@ import { storageService } from './storage'
 import { storageManager, SyncQueueItem, AttendanceRecord, User, AppSettings } from './db'
 import { supabase, isOnline } from './supabase'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Sync queue configuration interface
 interface SyncQueueConfig {
   maxRetries?: number
@@ -247,7 +248,7 @@ export class SyncQueue {
         })
       }
     } catch (error) {
-      console.error('Error processing sync queue:', error)
+      logger.error('Error processing sync queue', error as Error)
       this.emit('syncError', error)
     } finally {
       this.isProcessing = false

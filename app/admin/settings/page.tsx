@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AdminForm, FormField, FormSection } from "@/components/admin/AdminForm"
 import { ConfirmModal, useConfirmModal } from "@/components/admin/ConfirmModal"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Layout is provided by app/admin/layout.tsx
 import { SettingsInput, settingsSchema } from "@/lib/validation-schemas"
 import { Save, Building, Clock, Shield, Bell, Mail, Smartphone, Globe, Key, Users, AlertTriangle, CheckCircle } from "lucide-react"
@@ -175,10 +176,10 @@ export default function SettingsPage() {
       if (data.success) {
         setSettings(data.data || settings)
       } else {
-        console.error("Failed to fetch settings:", data.error)
+        logger.error('Failed to fetch settings:', new Error(data.error))
       }
     } catch (error) {
-      console.error("Error fetching settings:", error)
+      logger.error('Error fetching settings', error as Error)
     } finally {
       setLoading(false)
     }
@@ -211,13 +212,13 @@ export default function SettingsPage() {
         setSaveStatus("success")
         setTimeout(() => setSaveStatus("idle"), 3000)
       } else {
-        console.error("Failed to update settings:", data.error)
+        logger.error('Failed to update settings:', new Error(data.error))
         setSaveStatus("error")
         setTimeout(() => setSaveStatus("idle"), 3000)
         throw new Error(data.error)
       }
     } catch (error) {
-      console.error("Error updating settings:", error)
+      logger.error('Error updating settings', error as Error)
       setSaveStatus("error")
       setTimeout(() => setSaveStatus("idle"), 3000)
       throw error
@@ -246,10 +247,10 @@ export default function SettingsPage() {
           if (data.success) {
             fetchSettings()
           } else {
-            console.error("Failed to reset settings:", data.error)
+            logger.error('Failed to reset settings:', new Error(data.error))
           }
         } catch (error) {
-          console.error("Error resetting settings:", error)
+          logger.error('Error resetting settings', error as Error)
         }
       },
     })

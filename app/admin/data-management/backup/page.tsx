@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Layout is provided by app/admin/layout.tsx
 import {
   DatabaseBackup,
@@ -281,7 +282,7 @@ export default function BackupRestorePage() {
       setRestoreHistory(mockRestoreHistory)
       setSchedules(mockSchedules)
     } catch (error) {
-      console.error("Error fetching backup data:", error)
+      logger.error('Error fetching backup data', error as Error)
     } finally {
       setLoading(false)
     }

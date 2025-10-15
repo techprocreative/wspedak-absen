@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from './auth-middleware'
 import { secureStorage } from './secure-storage'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Login attempt tracking
 interface LoginAttempt {
   count: number
@@ -44,7 +45,7 @@ export class BruteForceProtection {
       attempt.isLocked = true
       
       // Log security event
-      console.warn(`Account locked due to brute force: ${identifier}`, {
+      logger.warn('Account locked due to brute force', { identifier, 
         attempts: attempt.count,
         lockUntil: new Date(attempt.lockUntil).toISOString()
       })
@@ -254,7 +255,7 @@ export function createAccountLockout() {
       }
     } catch (error) {
       // If we can't parse the body, continue with request
-      console.error('Account lockout middleware error:', error)
+      logger.error('Account lockout middleware error', error as Error)
     }
 
     return null // Continue with request
@@ -292,7 +293,7 @@ export function createSessionManager() {
         session: token
       }
     } catch (error) {
-      console.error('Session validation error:', error)
+      logger.error('Session validation error', error as Error)
       return null
     }
   }
@@ -434,11 +435,11 @@ export function logSecurityEvent(
     ip: details.ip || 'unknown'
   }
 
-  console.warn(`[SECURITY] ${severity.toUpperCase()}: ${event}`, logEntry)
+  logger.warn('Security event', { severity, event, ...logEntry })
   
   // In production, you would send this to a security monitoring service
   if (severity === 'high' || severity === 'critical') {
     // Send alert to security team
-    console.error('[SECURITY ALERT]', logEntry)
+    logger.error('[SECURITY ALERT]', logEntry as Error)
   }
 }

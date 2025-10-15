@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Monitoring & Analytics Utilities
  * Integrates with Sentry, Google Analytics, and custom logging
@@ -7,12 +9,12 @@
 export function initMonitoring() {
   if (typeof window === 'undefined') return
 
-  console.log('Initializing monitoring...')
+  logger.info('Initializing monitoring...')
   
   // Sentry integration (if configured)
   if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     // Note: Install @sentry/nextjs for full integration
-    console.log('Sentry DSN configured')
+    logger.info('Sentry DSN configured')
   }
 
   // Google Analytics (if configured)
@@ -55,7 +57,7 @@ export function trackEvent(event: string, data?: Record<string, any>) {
 
   // Console log in development
   if (process.env.NODE_ENV === 'development') {
-    console.log('📊 Event tracked:', event, data)
+    logger.info('📊 Event tracked', { value: event, data })
   }
 }
 
@@ -72,7 +74,7 @@ export function trackPageView(url: string) {
 
 // Track errors
 export function trackError(error: Error, context?: Record<string, any>) {
-  console.error('Error tracked:', error, context)
+  logger.error('Error tracked', error as Error, context)
 
   // Sentry (if configured)
   if ((window as any).Sentry) {
@@ -103,7 +105,7 @@ function setupPerformanceMonitoring() {
         unit: 'ms'
       })
 
-      console.log(`📈 Page load time: ${pageLoadTime}ms`)
+      logger.info('📈 Page load time: ${pageLoadTime}ms')
     }, 0)
   })
 }
@@ -118,7 +120,7 @@ export function trackAPICall(endpoint: string, duration: number, success: boolea
   })
 
   if (duration > 3000) {
-    console.warn(`⚠️  Slow API call: ${endpoint} (${duration}ms)`)
+    logger.warn('⚠️  Slow API call: ${endpoint} (${duration}ms)')
   }
 }
 

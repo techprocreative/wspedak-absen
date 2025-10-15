@@ -4,6 +4,7 @@ import { syncStrategyRegistry, SyncStrategy } from '../lib/sync-strategies'
 import { isOnline as checkIsOnline } from '../lib/supabase'
 import { toast } from 'sonner'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Sync hook return type
 export interface UseSyncReturn {
   // Status
@@ -297,13 +298,13 @@ export function useSync(options: UseSyncOptions = {}): UseSyncReturn {
     if (mergedOptions.enableRealtime) {
       // This would setup realtime subscriptions to Supabase
       // For now, it's a placeholder for future implementation
-      console.log('Realtime subscriptions enabled')
+      logger.info('Realtime subscriptions enabled')
     }
     
     return () => {
       // Cleanup realtime subscriptions
       if (mergedOptions.enableRealtime) {
-        console.log('Realtime subscriptions disabled')
+        logger.info('Realtime subscriptions disabled')
       }
     }
   }, [mergedOptions.enableRealtime])

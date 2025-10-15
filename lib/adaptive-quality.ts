@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Adaptive Quality Manager
  * Provides adaptive quality settings for the application
@@ -159,7 +161,7 @@ export class AdaptiveQualityManager {
       this.startRecoveryInterval();
     }
     
-    console.log('Adaptive quality manager initialized');
+    logger.info('Adaptive quality manager initialized');
   }
 
   /**
@@ -175,7 +177,7 @@ export class AdaptiveQualityManager {
     // Stop recovery interval
     this.stopRecoveryInterval();
     
-    console.log('Adaptive quality manager cleaned up');
+    logger.info('Adaptive quality manager cleaned up');
   }
 
   /**
@@ -266,7 +268,7 @@ export class AdaptiveQualityManager {
     // This is a placeholder implementation
     // In a real application, you would monitor actual performance metrics
     
-    console.log('Performance monitored');
+    logger.info('Performance monitored');
   }
 
   /**
@@ -305,9 +307,9 @@ export class AdaptiveQualityManager {
       this.lastAdjustment = new Date();
       this.adjustmentsCount++;
       
-      console.log(`Quality adjustment applied: ${strategy.name} (level: ${newLevel})`);
+      logger.info('Quality adjustment applied: ${strategy.name} (level: ${newLevel})');
     } catch (error) {
-      console.error(`Error applying adjustment strategy ${strategy.name}:`, error);
+      logger.error('Error applying adjustment strategy ${strategy.name}', error as Error);
     } finally {
       this.isAdjusting = false;
     }
@@ -338,7 +340,7 @@ export class AdaptiveQualityManager {
     }
     
     this.setQualityLevel(this.currentLevel + 1);
-    console.log(`Quality recovered to level ${this.currentLevel}`);
+    logger.info('Quality recovered to level ${this.currentLevel}');
   }
 
   /**
@@ -519,11 +521,11 @@ export class AdaptiveQualityManager {
       try {
         callback(level, this.options.qualityLevels![level]);
       } catch (error) {
-        console.error('Error in quality change callback:', error);
+        logger.error('Error in quality change callback', error as Error);
       }
     });
     
-    console.log(`Quality level changed from ${oldLevel} to ${level}`);
+    logger.info('Quality level changed from ${oldLevel} to ${level}');
   }
 
   /**

@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Sync Prioritizer
  * Provides prioritization of sync operations based on data importance and user context
@@ -78,7 +80,7 @@ export class SyncPrioritizer {
     // Start periodic priority updates
     this.startPriorityUpdates();
     
-    console.log('Sync prioritizer initialized');
+    logger.info('Sync prioritizer initialized');
   }
 
   /**
@@ -88,7 +90,7 @@ export class SyncPrioritizer {
     // Stop priority updates
     this.stopPriorityUpdates();
     
-    console.log('Sync prioritizer cleaned up');
+    logger.info('Sync prioritizer cleaned up');
   }
 
   /**
@@ -205,7 +207,7 @@ export class SyncPrioritizer {
       // Check if priority calculation took too long
       if (this.options.enablePerformanceOptimization && 
           endTime - startTime > this.options.maxPriorityCalculationTime!) {
-        console.warn(`Priority calculation took too long: ${endTime - startTime}ms`);
+        logger.warn('Priority calculation took too long: ${endTime - startTime}ms');
       }
     } finally {
       this.isUpdating = false;

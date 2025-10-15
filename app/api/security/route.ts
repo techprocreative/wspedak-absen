@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { securityMonitor } from '@/lib/security-monitor';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // GET /api/security - Get security events, threats, or rules
 export async function GET(request: NextRequest) {
   try {
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Security monitoring API error:', error);
+    logger.error('Security monitoring API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Security monitoring API error:', error);
+    logger.error('Security monitoring API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -193,7 +194,7 @@ export async function PATCH(request: NextRequest) {
       message,
     });
   } catch (error) {
-    console.error('Security monitoring API error:', error);
+    logger.error('Security monitoring API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -248,7 +249,7 @@ export async function DELETE(request: NextRequest) {
       message,
     });
   } catch (error) {
-    console.error('Security monitoring API error:', error);
+    logger.error('Security monitoring API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

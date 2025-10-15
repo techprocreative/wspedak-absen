@@ -16,7 +16,8 @@ import { Button } from '@/components/ui/button';
 import { AttendanceAnalyticsChart } from '@/components/admin/analytics/AttendanceAnalyticsChart';
 import { PredictiveAnalyticsCard } from '@/components/admin/analytics/PredictiveAnalyticsCard';
 import { ApiClient } from '@/lib/api-client';
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   BarChart3, 
   TrendingUp, 
   Users, 
@@ -48,9 +49,11 @@ function AnalyticsDashboard() {
       const response = await ApiClient.getAnalyticsStats()
       if (response.success) {
         setStats(response.data)
+      } else {
+        setError('No analytics data available')
       }
     } catch (err: any) {
-      console.error('Failed to fetch analytics stats:', err)
+      logger.error('Failed to fetch analytics stats', err as Error)
       setError(err.message || 'Failed to fetch analytics statistics')
     } finally {
       setLoading(false)
@@ -60,6 +63,79 @@ function AnalyticsDashboard() {
   useEffect(() => {
     fetchStats()
   }, [])
+
+  // Show error state
+  if (error && !loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Advanced Analytics</h1>
+            <p className="text-muted-foreground">
+              Comprehensive analytics and predictive insights
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchStats}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Unable to Load Analytics Data</h3>
+            <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
+              {error}
+            </p>
+            <Button onClick={fetchStats}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Show empty state when no data
+  if (!loading && (!stats || Object.keys(stats).length === 0)) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Advanced Analytics</h1>
+            <p className="text-muted-foreground">
+              Comprehensive analytics and predictive insights
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchStats}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Brain className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Analytics Data Yet</h3>
+            <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
+              Analytics data will appear here once you have employee attendance records.
+              Start by adding employees and recording their attendance.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => window.location.href = '/admin/employees'}>
+                <Users className="h-4 w-4 mr-2" />
+                Manage Employees
+              </Button>
+              <Button onClick={() => window.location.href = '/admin/attendance'}>
+                <Calendar className="h-4 w-4 mr-2" />
+                View Attendance
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

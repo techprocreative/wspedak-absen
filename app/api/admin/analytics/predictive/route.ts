@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { predictiveAnalytics } from '@/lib/analytics/predictive-analytics';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -76,7 +77,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error fetching predictive analytics:', error);
+    logger.error('Error fetching predictive analytics', error as Error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch predictive analytics' },
       { status: 500 }
@@ -134,7 +135,7 @@ export async function POST(request: NextRequest) {
       error: 'Invalid request'
     }, { status: 400 });
   } catch (error) {
-    console.error('Error in predictive analytics POST:', error);
+    logger.error('Error in predictive analytics POST', error as Error);
     return NextResponse.json(
       { success: false, error: 'Failed to process request' },
       { status: 500 }

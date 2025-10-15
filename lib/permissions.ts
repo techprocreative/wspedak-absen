@@ -1,6 +1,7 @@
 import { secureStorage } from './secure-storage'
 import { UserRole } from './auth'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Permission system configuration
 const PERMISSIONS_KEY = 'system_permissions'
 const ROLES_KEY = 'system_roles'
@@ -240,7 +241,7 @@ export class PermissionManager {
     try {
       return secureStorage.getItem<Permission[]>(PERMISSIONS_KEY) || []
     } catch (error) {
-      console.error('Error loading permissions:', error)
+      logger.error('Error loading permissions', error as Error)
       return []
     }
   }
@@ -250,7 +251,7 @@ export class PermissionManager {
     try {
       secureStorage.setItem(PERMISSIONS_KEY, this.permissions)
     } catch (error) {
-      console.error('Error saving permissions:', error)
+      logger.error('Error saving permissions', error as Error)
     }
   }
 
@@ -259,7 +260,7 @@ export class PermissionManager {
     try {
       return secureStorage.getItem<Role[]>(ROLES_KEY) || []
     } catch (error) {
-      console.error('Error loading roles:', error)
+      logger.error('Error loading roles', error as Error)
       return []
     }
   }
@@ -269,7 +270,7 @@ export class PermissionManager {
     try {
       secureStorage.setItem(ROLES_KEY, this.roles)
     } catch (error) {
-      console.error('Error saving roles:', error)
+      logger.error('Error saving roles', error as Error)
     }
   }
 
@@ -278,7 +279,7 @@ export class PermissionManager {
     try {
       return secureStorage.getItem<UserPermissionOverride[]>(USER_PERMISSIONS_KEY) || []
     } catch (error) {
-      console.error('Error loading user permissions:', error)
+      logger.error('Error loading user permissions', error as Error)
       return []
     }
   }
@@ -288,7 +289,7 @@ export class PermissionManager {
     try {
       secureStorage.setItem(USER_PERMISSIONS_KEY, this.userPermissions)
     } catch (error) {
-      console.error('Error saving user permissions:', error)
+      logger.error('Error saving user permissions', error as Error)
     }
   }
 
@@ -298,7 +299,7 @@ export class PermissionManager {
       const data = secureStorage.getItem<Record<string, string[]>>(ROLE_PERMISSIONS_KEY) || {}
       return new Map(Object.entries(data))
     } catch (error) {
-      console.error('Error loading role permissions:', error)
+      logger.error('Error loading role permissions', error as Error)
       return new Map()
     }
   }
@@ -309,7 +310,7 @@ export class PermissionManager {
       const data = Object.fromEntries(this.rolePermissions)
       secureStorage.setItem(ROLE_PERMISSIONS_KEY, data)
     } catch (error) {
-      console.error('Error saving role permissions:', error)
+      logger.error('Error saving role permissions', error as Error)
     }
   }
 

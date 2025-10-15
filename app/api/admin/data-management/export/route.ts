@@ -3,6 +3,7 @@ import * as Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { createServerSupabaseClient, checkAdminAuth } from '@/lib/supabase-server'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 // File size limits
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error('Supabase query error:', error)
+      logger.error('Supabase query error', error as Error)
       return NextResponse.json(
         { error: 'Failed to fetch data', details: error.message },
         { status: 500 }
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
           throw new Error('Unsupported format')
       }
     } catch (formatError: any) {
-      console.error('Format conversion error:', formatError)
+      logger.error('Format conversion error', formatError as Error)
       return NextResponse.json(
         { error: 'Failed to format data', details: formatError.message },
         { status: 500 }
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
       })
 
     if (uploadError) {
-      console.error('Upload error:', uploadError)
+      logger.error('Upload error', uploadError as Error)
       return NextResponse.json(
         { error: 'Failed to upload file', details: uploadError.message },
         { status: 500 }
@@ -191,7 +192,7 @@ export async function POST(request: NextRequest) {
       .createSignedUrl(exportFilename, 3600) // 1 hour expiry
 
     if (signedUrlError) {
-      console.error('Signed URL error:', signedUrlError)
+      logger.error('Signed URL error', signedUrlError as Error)
       return NextResponse.json(
         { error: 'Failed to create download link', details: signedUrlError.message },
         { status: 500 }
@@ -214,7 +215,7 @@ export async function POST(request: NextRequest) {
         }
       })
     } catch (auditError) {
-      console.error('Audit log error:', auditError)
+      logger.error('Audit log error', auditError as Error)
       // Don't fail the export if audit logging fails
     }
 
@@ -229,7 +230,7 @@ export async function POST(request: NextRequest) {
       message: 'Export completed successfully. Download link expires in 1 hour.'
     })
   } catch (error: any) {
-    console.error('Data export error:', error)
+    logger.error('Data export error', error as Error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -305,7 +306,7 @@ export async function GET(request: NextRequest) {
       formats: ['csv', 'excel', 'json']
     })
   } catch (error: any) {
-    console.error('Export info error:', error)
+    logger.error('Export info error', error as Error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }

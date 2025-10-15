@@ -1,6 +1,7 @@
 import { secureStorage, setSecureSessionData, getSecureSessionData } from './secure-storage'
 import { AuthSession } from './auth'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Session management configuration
 const SESSION_STORAGE_KEY = 'enhanced_sessions'
 const SESSION_ACTIVITY_KEY = 'session_activity'
@@ -153,7 +154,7 @@ export class SessionManager {
       sessions.push(session)
       secureStorage.setItem(SESSION_STORAGE_KEY, sessions)
     } catch (error) {
-      console.error('Error storing session:', error)
+      logger.error('Error storing session', error as Error)
       throw new Error('Failed to store session')
     }
   }
@@ -163,7 +164,7 @@ export class SessionManager {
     try {
       return secureStorage.getItem<EnhancedSession[]>(SESSION_STORAGE_KEY) || []
     } catch (error) {
-      console.error('Error retrieving sessions:', error)
+      logger.error('Error retrieving sessions', error as Error)
       return []
     }
   }
@@ -216,7 +217,7 @@ export class SessionManager {
       // Log activity
       this.logActivity(sessionId, session.userId, action, details, ip || session.deviceInfo.ip, userAgent || session.deviceInfo.userAgent, true)
     } catch (error) {
-      console.error('Error updating session activity:', error)
+      logger.error('Error updating session activity', error as Error)
     }
   }
 
@@ -240,7 +241,7 @@ export class SessionManager {
       
       return true
     } catch (error) {
-      console.error('Error terminating session:', error)
+      logger.error('Error terminating session', error as Error)
       return false
     }
   }
@@ -262,7 +263,7 @@ export class SessionManager {
       
       return userSessions.length
     } catch (error) {
-      console.error('Error terminating all sessions for user:', error)
+      logger.error('Error terminating all sessions for user', error as Error)
       return 0
     }
   }
@@ -285,7 +286,7 @@ export class SessionManager {
       
       return expiredSessions.length
     } catch (error) {
-      console.error('Error cleaning up expired sessions:', error)
+      logger.error('Error cleaning up expired sessions', error as Error)
       return 0
     }
   }
@@ -330,7 +331,7 @@ export class SessionManager {
       
       secureStorage.setItem(SESSION_ACTIVITY_KEY, activities)
     } catch (error) {
-      console.error('Error logging session activity:', error)
+      logger.error('Error logging session activity', error as Error)
     }
   }
 
@@ -339,7 +340,7 @@ export class SessionManager {
     try {
       return secureStorage.getItem<SessionActivity[]>(SESSION_ACTIVITY_KEY) || []
     } catch (error) {
-      console.error('Error retrieving session activities:', error)
+      logger.error('Error retrieving session activities', error as Error)
       return []
     }
   }
@@ -354,7 +355,7 @@ export class SessionManager {
       
       return limit ? userActivities.slice(0, limit) : userActivities
     } catch (error) {
-      console.error('Error retrieving session activities for user:', error)
+      logger.error('Error retrieving session activities for user', error as Error)
       return []
     }
   }
@@ -405,7 +406,7 @@ export class SessionManager {
         uniqueLocations,
       }
     } catch (error) {
-      console.error('Error getting session statistics:', error)
+      logger.error('Error getting session statistics', error as Error)
       return {
         totalSessions: 0,
         activeSessions: 0,
@@ -452,7 +453,7 @@ export class SessionManager {
       
       return false
     } catch (error) {
-      console.error('Error detecting suspicious activity:', error)
+      logger.error('Error detecting suspicious activity', error as Error)
       return false
     }
   }
@@ -472,7 +473,7 @@ export class SessionManager {
       
       return true
     } catch (error) {
-      console.error('Error updating session security flags:', error)
+      logger.error('Error updating session security flags', error as Error)
       return false
     }
   }

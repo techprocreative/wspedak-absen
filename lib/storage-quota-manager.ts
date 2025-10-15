@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Storage Quota Manager
  * Provides storage quota management for the application
@@ -139,7 +141,7 @@ export class StorageQuotaManager {
       this.startArchiveInterval();
     }
     
-    console.log('Storage quota manager initialized');
+    logger.info('Storage quota manager initialized');
   }
 
   /**
@@ -155,7 +157,7 @@ export class StorageQuotaManager {
     // Stop archive interval
     this.stopArchiveInterval();
     
-    console.log('Storage quota manager cleaned up');
+    logger.info('Storage quota manager cleaned up');
   }
 
   /**
@@ -263,11 +265,11 @@ export class StorageQuotaManager {
     
     // Log quota status
     if (quota.isQuotaExceeded) {
-      console.error(`Storage quota exceeded: ${quota.used.toFixed(2)} MB / ${quota.quota.toFixed(2)} MB (${quota.percentage.toFixed(2)}%)`);
+      logger.error('Storage quota exceeded: ${quota.used.toFixed(2)} MB / ${quota.quota.toFixed(2)} MB (%)', new Error(), { value: quota.percentage.toFixed(2) });
     } else if (quota.isQuotaCritical) {
-      console.warn(`Storage quota critical: ${quota.used.toFixed(2)} MB / ${quota.quota.toFixed(2)} MB (${quota.percentage.toFixed(2)}%)`);
+      logger.warn('Storage quota critical: ${quota.used.toFixed(2)} MB / ${quota.quota.toFixed(2)} MB (${quota.percentage.toFixed(2)}%)');
     } else if (quota.isQuotaWarning) {
-      console.warn(`Storage quota warning: ${quota.used.toFixed(2)} MB / ${quota.quota.toFixed(2)} MB (${quota.percentage.toFixed(2)}%)`);
+      logger.warn('Storage quota warning: ${quota.used.toFixed(2)} MB / ${quota.quota.toFixed(2)} MB (${quota.percentage.toFixed(2)}%)');
     }
   }
 
@@ -326,10 +328,10 @@ export class StorageQuotaManager {
       try {
         if (strategy.condition()) {
           await strategy.execute();
-          console.log(`Executed cleanup strategy: ${strategy.name}`);
+          logger.info('Executed cleanup strategy: ${strategy.name}');
         }
       } catch (error) {
-        console.error(`Error executing cleanup strategy ${strategy.name}:`, error);
+        logger.error('Error executing cleanup strategy ${strategy.name}', error as Error);
       }
     }
     
@@ -356,7 +358,7 @@ export class StorageQuotaManager {
     // This is a placeholder implementation
     // In a real application, you would clear the cache
     
-    console.log('Cache cleared');
+    logger.info('Cache cleared');
   }
 
   /**
@@ -366,7 +368,7 @@ export class StorageQuotaManager {
     // This is a placeholder implementation
     // In a real application, you would archive old data
     
-    console.log('Old data archived');
+    logger.info('Old data archived');
     this.lastArchive = new Date();
     this.archiveCount++;
   }
@@ -378,7 +380,7 @@ export class StorageQuotaManager {
     // This is a placeholder implementation
     // In a real application, you would compress data
     
-    console.log('Data compressed');
+    logger.info('Data compressed');
   }
 
   /**
@@ -388,7 +390,7 @@ export class StorageQuotaManager {
     // This is a placeholder implementation
     // In a real application, you would delete temporary files
     
-    console.log('Temporary files deleted');
+    logger.info('Temporary files deleted');
   }
 
   /**
@@ -419,7 +421,7 @@ export class StorageQuotaManager {
     // This is a placeholder implementation
     // In a real application, you would use the Quota Management API
     
-    console.log(`Requested ${size} MB of storage quota`);
+    logger.info('Requested ${size} MB of storage quota');
     
     // For now, just return true
     return true;

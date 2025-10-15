@@ -7,6 +7,7 @@
 import { businessIntelligence } from './business-intelligence';
 import { systemMonitor } from '@/lib/monitoring/system-monitor';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Prediction interfaces
 export interface PredictionResult {
   id: string;
@@ -244,15 +245,15 @@ class PredictiveAnalytics {
     if (this.isTraining) return;
 
     this.isTraining = true;
-    console.log('Starting model retraining...');
+    logger.info('Starting model retraining...');
 
     try {
       for (const [modelId, model] of this.models) {
         await this.trainModel(modelId);
       }
-      console.log('Model retraining completed');
+      logger.info('Model retraining completed');
     } catch (error) {
-      console.error('Model retraining failed:', error);
+      logger.error('Model retraining failed', error as Error);
     } finally {
       this.isTraining = false;
     }
@@ -272,7 +273,7 @@ class PredictiveAnalytics {
     model.lastTrained = new Date();
     model.trainingDataSize += Math.floor(Math.random() * 100);
 
-    console.log(`Model ${model.name} retrained. New accuracy: ${model.accuracy.toFixed(3)}`);
+    logger.info('Model ${model.name} retrained. New accuracy: ${model.accuracy.toFixed(3)}');
   }
 
   // Predict attendance for future dates

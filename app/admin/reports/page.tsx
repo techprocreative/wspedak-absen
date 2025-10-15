@@ -16,7 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ApiClient } from '@/lib/api-client';
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   FileText, 
   BarChart3, 
   PieChart, 
@@ -51,9 +52,11 @@ function ReportBuilder() {
       const response = await ApiClient.getReportsStats()
       if (response.success) {
         setStats(response.data)
+      } else {
+        setError('No reports data available')
       }
     } catch (err: any) {
-      console.error('Failed to fetch reports stats:', err)
+      logger.error('Failed to fetch reports stats', err as Error)
       setError(err.message || 'Failed to fetch reports statistics')
     } finally {
       setLoading(false)
@@ -63,6 +66,79 @@ function ReportBuilder() {
   useEffect(() => {
     fetchStats()
   }, [])
+
+  // Show error state
+  if (error && !loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Custom Report Builder</h1>
+            <p className="text-muted-foreground">
+              Create custom reports with interactive builder
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchStats}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Unable to Load Reports Data</h3>
+            <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
+              {error}
+            </p>
+            <Button onClick={fetchStats}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Show empty state
+  if (!loading && (!stats || stats.totalReports === 0)) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Custom Report Builder</h1>
+            <p className="text-muted-foreground">
+              Create custom reports with interactive builder
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchStats}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Reports Yet</h3>
+            <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
+              Create your first custom report to get started.
+              Reports can include attendance data, employee statistics, and more.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => window.location.href = '/admin/reports/generate'}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Report
+              </Button>
+              <Button onClick={() => window.location.href = '/admin/attendance'}>
+                <Database className="h-4 w-4 mr-2" />
+                View Attendance Data
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

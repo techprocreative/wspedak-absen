@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Business Metrics Monitoring System
  * Provides comprehensive business metrics tracking for the attendance application
@@ -359,7 +361,7 @@ export class BusinessMetricsCollector {
         }
       }
     } catch (error) {
-      console.error('Error loading persisted business metrics:', error);
+      logger.error('Error loading persisted business metrics', error as Error);
     }
   }
 
@@ -385,7 +387,7 @@ export class BusinessMetricsCollector {
       
       localStorage.setItem(this.options.persistenceKey!, JSON.stringify(data));
     } catch (error) {
-      console.error('Error persisting business metrics:', error);
+      logger.error('Error persisting business metrics', error as Error);
     }
   }
 
@@ -476,7 +478,7 @@ export class BusinessMetricsCollector {
   private aggregateMetrics(): void {
     // This is a placeholder implementation
     // In a real application, you would perform actual metric aggregation
-    console.log('Aggregating business metrics...');
+    logger.info('Aggregating business metrics...');
   }
 
   /**
@@ -512,7 +514,7 @@ export class BusinessMetricsCollector {
   ): void {
     const definition = this.metricDefinitions.get(id);
     if (!definition) {
-      console.warn(`Business metric ${id} is not defined`);
+      logger.warn('Business metric ${id} is not defined');
       return;
     }
 
@@ -572,7 +574,7 @@ export class BusinessMetricsCollector {
   ): void {
     const definition = this.metricDefinitions.get(id);
     if (!definition || definition.type !== 'counter') {
-      console.warn(`Business metric ${id} is not a counter`);
+      logger.warn('Business metric ${id} is not a counter');
       return;
     }
 
@@ -597,7 +599,7 @@ export class BusinessMetricsCollector {
   ): void {
     const definition = this.metricDefinitions.get(id);
     if (!definition || definition.type !== 'timer') {
-      console.warn(`Business metric ${id} is not a timer`);
+      logger.warn('Business metric ${id} is not a timer');
       return;
     }
 
@@ -936,7 +938,7 @@ export class BusinessMetricsCollector {
       try {
         callback(metric);
       } catch (error) {
-        console.error('Error in business metrics update callback:', error);
+        logger.error('Error in business metrics update callback', error as Error);
       }
     });
   }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyJWT } from "@/lib/auth";
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 import { createClient } from "@supabase/supabase-js";
 
@@ -84,7 +85,7 @@ export async function GET(request: Request) {
       summary
     });
   } catch (error: any) {
-    console.error("Error fetching exceptions:", error);
+    logger.error('Error fetching exceptions', error as Error);
     return NextResponse.json(
       { error: error.message || "Failed to fetch exceptions" },
       { status: 500 }

@@ -5,6 +5,7 @@
 
 import { serverDbManager } from './server-db'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export interface FaceMatchResult {
   userId: string
   userName?: string
@@ -46,7 +47,7 @@ export class FaceMatcher {
     try {
       // Validate descriptor
       if (!descriptor || descriptor.length !== 128) {
-        console.error('Invalid descriptor: must be 128 dimensions')
+        logger.error('Invalid descriptor: must be 128 dimensions', new Error())
         return null
       }
       
@@ -54,11 +55,11 @@ export class FaceMatcher {
       const allEmbeddings = await serverDbManager.getAllFaceEmbeddings()
       
       if (allEmbeddings.length === 0) {
-        console.log('No face embeddings found in database')
+        logger.info('No face embeddings found in database')
         return null
       }
       
-      console.log(`Matching face against ${allEmbeddings.length} embeddings`)
+      logger.info('Matching face against ${allEmbeddings.length} embeddings')
       
       // Find best match
       let bestMatch: FaceMatchResult | null = null
@@ -66,7 +67,7 @@ export class FaceMatcher {
       
       for (const embedding of allEmbeddings) {
         if (!embedding.embedding || embedding.embedding.length !== 128) {
-          console.warn(`Skipping invalid embedding ${embedding.id}`)
+          logger.warn('Skipping invalid embedding ${embedding.id}')
           continue
         }
         
@@ -92,14 +93,14 @@ export class FaceMatcher {
           bestMatch.userName = user.name
         }
         
-        console.log(`Match found: ${bestMatch.userName} (confidence: ${(bestMatch.confidence * 100).toFixed(2)}%)`)
+        logger.info('Match found: ${bestMatch.userName} (confidence: ${(bestMatch.confidence * 100).toFixed(2)}%)')
         return bestMatch
       }
       
-      console.log(`No match found. Best distance: ${bestDistance}, confidence: ${bestMatch?.confidence}`)
+      logger.info('No match found. Best distance: ${bestDistance}, confidence: ${bestMatch?.confidence}')
       return null
     } catch (error) {
-      console.error('Error matching face:', error)
+      logger.error('Error matching face', error as Error)
       return null
     }
   }
@@ -133,7 +134,7 @@ export class FaceMatcher {
         }
       }
       
-      console.log(`Verifying face against ${userEmbeddings.length} embeddings for user ${userId}`)
+      logger.info('Verifying face against ${userEmbeddings.length} embeddings for user ${userId}')
       
       // Check against all user's embeddings (take best match)
       let maxConfidence = 0
@@ -155,7 +156,7 @@ export class FaceMatcher {
       
       const matched = maxConfidence >= this.MATCH_THRESHOLD && minDistance <= this.MAX_DISTANCE
       
-      console.log(`Verification result: ${matched ? 'MATCHED' : 'NOT MATCHED'} (confidence: ${(maxConfidence * 100).toFixed(2)}%)`)
+      logger.debug('Verification result', { matched, confidence: (maxConfidence * 100).toFixed(2) });
       
       return {
         matched,
@@ -165,7 +166,7 @@ export class FaceMatcher {
           : `Confidence too low: ${(maxConfidence * 100).toFixed(2)}%`
       }
     } catch (error) {
-      console.error('Error verifying face:', error)
+      logger.error('Error verifying face', error as Error)
       return { 
         matched: false, 
         confidence: 0, 

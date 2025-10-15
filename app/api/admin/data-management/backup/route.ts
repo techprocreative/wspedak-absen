@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import JSZip from 'jszip'
 import { createServerSupabaseClient, checkAdminAuth } from '@/lib/supabase-server'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 // Backup settings
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
         const { data, error } = await supabase.from(tableName).select('*')
 
         if (error) {
-          console.error(`Error backing up ${tableName}:`, error)
+          logger.error('Error backing up ${tableName}', error as Error)
           backupData.tables[tableName] = {
             error: error.message,
             records: 0
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
           zip.file(`${tableName}.json`, JSON.stringify(data, null, 2))
         }
       } catch (tableError: any) {
-        console.error(`Error processing ${tableName}:`, tableError)
+        logger.error('Error processing ${tableName}', tableError as Error)
         backupData.tables[tableName] = {
           error: tableError.message,
           records: 0
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
       }))
     })
   } catch (error: any) {
-    console.error('Backup error:', error)
+    logger.error('Backup error', error as Error)
     return NextResponse.json({
       error: 'Internal server error',
       details: error.message
@@ -221,7 +222,7 @@ export async function GET(request: NextRequest) {
       actions: ['create (POST)', 'history (GET)', 'list (GET)']
     })
   } catch (error: any) {
-    console.error('Backup list error:', error)
+    logger.error('Backup list error', error as Error)
     return NextResponse.json({
       error: 'Internal server error',
       details: error.message
@@ -271,7 +272,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Backup deleted successfully'
     })
   } catch (error: any) {
-    console.error('Backup delete error:', error)
+    logger.error('Backup delete error', error as Error)
     return NextResponse.json({
       error: 'Internal server error',
       details: error.message

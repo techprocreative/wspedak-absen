@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { systemMonitor } from '@/lib/monitoring/system-monitor';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error fetching monitoring alerts:', error);
+    logger.error('Error fetching monitoring alerts', error as Error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch monitoring alerts' },
       { status: 500 }
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       error: 'Invalid request'
     }, { status: 400 });
   } catch (error) {
-    console.error('Error in monitoring alerts POST:', error);
+    logger.error('Error in monitoring alerts POST', error as Error);
     return NextResponse.json(
       { success: false, error: 'Failed to process request' },
       { status: 500 }

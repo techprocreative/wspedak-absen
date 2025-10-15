@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Performance Alerts System
  * Provides alerting for performance issues
@@ -105,7 +107,7 @@ export class PerformanceAlerts {
     // Start alert interval
     this.startAlertInterval();
     
-    console.log('Performance alerts system initialized');
+    logger.info('Performance alerts system initialized');
   }
 
   /**
@@ -115,7 +117,7 @@ export class PerformanceAlerts {
     // Stop alert interval
     this.stopAlertInterval();
     
-    console.log('Performance alerts system cleaned up');
+    logger.info('Performance alerts system cleaned up');
   }
 
   /**
@@ -414,7 +416,7 @@ export class PerformanceAlerts {
       notification.sentAt = new Date();
     } catch (error) {
       notification.error = error instanceof Error ? error.message : String(error);
-      console.error(`Error sending ${method} notification:`, error);
+      logger.error('Error sending ${method} notification', error as Error);
     }
     
     this.notifications.push(notification);
@@ -574,7 +576,7 @@ export class PerformanceAlerts {
         },
         body: JSON.stringify({ type: 'alert', data: alert }),
       }).catch(error => {
-        console.error('Failed to send alert webhook:', error);
+        logger.error('Failed to send alert webhook', error as Error);
       });
     }
   }
@@ -587,7 +589,7 @@ export class PerformanceAlerts {
       try {
         callback(alert);
       } catch (error) {
-        console.error('Error in alert callback:', error);
+        logger.error('Error in alert callback', error as Error);
       }
     });
   }

@@ -4,6 +4,7 @@ import { AttendanceRecord, User } from './db'
 import { supabaseService, isOnline } from './supabase'
 import { syncQueue } from './sync-queue'
 
+import { logger } from '@/lib/logger'
 // Sync strategy interface
 export interface SyncStrategy {
   name: string
@@ -376,18 +377,18 @@ export class SyncStrategyRegistry {
       priority: SyncPriority.HIGH,
       onSyncSuccess: (data: AttendanceRecord) => {
         // Update UI to show record as synced
-        console.log('Attendance record synced successfully:', data.id)
+        logger.info('Attendance record synced successfully', { value: data.id })
       },
       onSyncFailure: (data: AttendanceRecord, error: any) => {
         // Show error to user
-        console.error('Failed to sync attendance record:', data.id, error)
+        logger.error('Failed to sync attendance record', error as Error, { value: data.id })
       },
       rollback: async (data: AttendanceRecord) => {
         // Rollback the record
         try {
           await storageService.deleteAttendanceRecord(data.id)
         } catch (error) {
-          console.error('Failed to rollback attendance record:', data.id, error)
+          logger.error('Failed to rollback attendance record', error as Error, { value: data.id })
         }
       },
     }))

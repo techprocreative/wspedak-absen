@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Health Check System
  * Provides comprehensive health monitoring for the application
@@ -835,7 +837,7 @@ export class HealthCheckManager {
       try {
         callback(result);
       } catch (error) {
-        console.error('Error in health check notification callback:', error);
+        logger.error('Error in health check notification callback', error as Error);
       }
     });
   }

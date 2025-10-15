@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hasAnyServerRole } from '@/lib/server-auth'
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   validatePassword,
   changePassword,
   isAccountLocked,
@@ -173,7 +174,7 @@ export async function GET(request: NextRequest) {
         )
     }
   } catch (error) {
-    console.error('Error in password security API:', error)
+    logger.error('Error in password security API', error as Error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -400,7 +401,7 @@ export async function POST(request: NextRequest) {
         )
     }
   } catch (error) {
-    console.error('Error in password security API:', error)
+    logger.error('Error in password security API', error as Error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -451,7 +452,7 @@ export async function PUT(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error updating password security settings:', error)
+    logger.error('Error updating password security settings', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to update password security settings' },
       { status: 500 }

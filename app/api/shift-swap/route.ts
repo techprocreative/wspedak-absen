@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyJWT } from "@/lib/auth";
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 import { createClient } from "@supabase/supabase-js";
 
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ swaps: data });
   } catch (error: any) {
-    console.error("Error fetching shift swaps:", error);
+    logger.error('Error fetching shift swaps', error as Error);
     return NextResponse.json(
       { error: error.message || "Failed to fetch shift swaps" },
       { status: 500 }
@@ -162,7 +163,7 @@ export async function POST(request: Request) {
       message: "Shift swap request created successfully",
     });
   } catch (error: any) {
-    console.error("Error creating shift swap:", error);
+    logger.error('Error creating shift swap', error as Error);
     return NextResponse.json(
       { error: error.message || "Failed to create shift swap" },
       { status: 500 }

@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Performance Profiler
  * Provides performance profiling tools for the application
@@ -119,7 +121,7 @@ export class PerformanceProfiler {
     // Start report interval
     this.startReportInterval();
     
-    console.log('Performance profiler initialized');
+    logger.info('Performance profiler initialized');
   }
 
   /**
@@ -137,7 +139,7 @@ export class PerformanceProfiler {
     // Stop report interval
     this.stopReportInterval();
     
-    console.log('Performance profiler cleaned up');
+    logger.info('Performance profiler cleaned up');
   }
 
   /**
@@ -632,7 +634,7 @@ export class PerformanceProfiler {
         },
         body: JSON.stringify({ type: 'profile', data: profile }),
       }).catch(error => {
-        console.error('Failed to send profile report:', error);
+        logger.error('Failed to send profile report', error as Error);
       });
     }
   }

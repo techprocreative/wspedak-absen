@@ -3,6 +3,7 @@ import QRCode from 'qrcode'
 import crypto from 'crypto'
 import { secureStorage } from './secure-storage'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // MFA configuration
 const MFA_SECRET_KEY = process.env.MFA_SECRET_KEY || 'default-mfa-secret-change-in-production'
 const MFA_STORAGE_KEY = 'mfa_secrets'
@@ -80,7 +81,7 @@ export async function generateMFAQRCode(secret: string, email: string, issuer: s
     const qrCodeDataURL = await QRCode.toDataURL(otpauthUrl)
     return qrCodeDataURL
   } catch (error) {
-    console.error('Error generating MFA QR code:', error)
+    logger.error('Error generating MFA QR code', error as Error)
     throw new Error('Failed to generate QR code')
   }
 }
@@ -90,7 +91,7 @@ export function verifyTOTPToken(token: string, secret: string): boolean {
   try {
     return authenticator.verify({ token, secret })
   } catch (error) {
-    console.error('Error verifying TOTP token:', error)
+    logger.error('Error verifying TOTP token', error as Error)
     return false
   }
 }
@@ -113,7 +114,7 @@ export function storeMFASecret(mfaSecret: MFASecret): void {
     
     secureStorage.setItem(MFA_STORAGE_KEY, userSecrets)
   } catch (error) {
-    console.error('Error storing MFA secret:', error)
+    logger.error('Error storing MFA secret', error as Error)
     throw new Error('Failed to store MFA secret')
   }
 }
@@ -123,7 +124,7 @@ export function getMFASecrets(): MFASecret[] {
   try {
     return secureStorage.getItem<MFASecret[]>(MFA_STORAGE_KEY) || []
   } catch (error) {
-    console.error('Error retrieving MFA secrets:', error)
+    logger.error('Error retrieving MFA secrets', error as Error)
     return []
   }
 }
@@ -134,7 +135,7 @@ export function getMFASecretForUser(userId: string): MFASecret | null {
     const secrets = getMFASecrets()
     return secrets.find(s => s.userId === userId && s.isActive) || null
   } catch (error) {
-    console.error('Error retrieving MFA secret for user:', error)
+    logger.error('Error retrieving MFA secret for user', error as Error)
     return null
   }
 }
@@ -153,7 +154,7 @@ export function activateMFAForUser(userId: string): boolean {
     secureStorage.setItem(MFA_STORAGE_KEY, secrets)
     return true
   } catch (error) {
-    console.error('Error activating MFA for user:', error)
+    logger.error('Error activating MFA for user', error as Error)
     return false
   }
 }
@@ -177,7 +178,7 @@ export function deactivateMFAForUser(userId: string): boolean {
     
     return true
   } catch (error) {
-    console.error('Error deactivating MFA for user:', error)
+    logger.error('Error deactivating MFA for user', error as Error)
     return false
   }
 }
@@ -199,7 +200,7 @@ export function storeBackupCodes(userId: string, codes: string[]): void {
     
     secureStorage.setItem(MFA_BACKUP_CODES_KEY, userBackupCodes)
   } catch (error) {
-    console.error('Error storing backup codes:', error)
+    logger.error('Error storing backup codes', error as Error)
     throw new Error('Failed to store backup codes')
   }
 }
@@ -210,7 +211,7 @@ export function getBackupCodesForUser(userId: string): BackupCodes | null {
     const backupCodes = getBackupCodes()
     return backupCodes.find(b => b.userId === userId && b.isActive) || null
   } catch (error) {
-    console.error('Error retrieving backup codes for user:', error)
+    logger.error('Error retrieving backup codes for user', error as Error)
     return null
   }
 }
@@ -220,7 +221,7 @@ export function getBackupCodes(): BackupCodes[] {
   try {
     return secureStorage.getItem<BackupCodes[]>(MFA_BACKUP_CODES_KEY) || []
   } catch (error) {
-    console.error('Error retrieving backup codes:', error)
+    logger.error('Error retrieving backup codes', error as Error)
     return []
   }
 }
@@ -245,7 +246,7 @@ export function verifyBackupCode(userId: string, code: string): boolean {
     
     return false
   } catch (error) {
-    console.error('Error verifying backup code:', error)
+    logger.error('Error verifying backup code', error as Error)
     return false
   }
 }
@@ -261,7 +262,7 @@ export function removeBackupCodesForUser(userId: string): void {
       secureStorage.setItem(MFA_BACKUP_CODES_KEY, backupCodes)
     }
   } catch (error) {
-    console.error('Error removing backup codes for user:', error)
+    logger.error('Error removing backup codes for user', error as Error)
   }
 }
 
@@ -279,7 +280,7 @@ export function storeTrustedDevice(device: TrustedDevice): void {
     
     secureStorage.setItem(MFA_DEVICES_KEY, userDevices)
   } catch (error) {
-    console.error('Error storing trusted device:', error)
+    logger.error('Error storing trusted device', error as Error)
     throw new Error('Failed to store trusted device')
   }
 }
@@ -294,7 +295,7 @@ export function getTrustedDevicesForUser(userId: string): TrustedDevice[] {
       .filter(d => d.userId === userId && d.isActive)
       .filter(d => new Date(d.expiresAt) > now) // Remove expired devices
   } catch (error) {
-    console.error('Error retrieving trusted devices for user:', error)
+    logger.error('Error retrieving trusted devices for user', error as Error)
     return []
   }
 }
@@ -304,7 +305,7 @@ export function getTrustedDevices(): TrustedDevice[] {
   try {
     return secureStorage.getItem<TrustedDevice[]>(MFA_DEVICES_KEY) || []
   } catch (error) {
-    console.error('Error retrieving trusted devices:', error)
+    logger.error('Error retrieving trusted devices', error as Error)
     return []
   }
 }
@@ -321,7 +322,7 @@ export function isDeviceTrusted(userId: string, userAgent: string, ip: string): 
       new Date(d.expiresAt) > now
     ) || null
   } catch (error) {
-    console.error('Error checking trusted device:', error)
+    logger.error('Error checking trusted device', error as Error)
     return null
   }
 }
@@ -358,7 +359,7 @@ export function removeTrustedDevice(deviceId: string): boolean {
     
     return false
   } catch (error) {
-    console.error('Error removing trusted device:', error)
+    logger.error('Error removing trusted device', error as Error)
     return false
   }
 }
@@ -375,7 +376,7 @@ export function removeTrustedDevicesForUser(userId: string): void {
     
     secureStorage.setItem(MFA_DEVICES_KEY, devices)
   } catch (error) {
-    console.error('Error removing trusted devices for user:', error)
+    logger.error('Error removing trusted devices for user', error as Error)
   }
 }
 
@@ -444,7 +445,7 @@ export function verifyMFA(
       error: 'Invalid verification code',
     }
   } catch (error) {
-    console.error('Error during MFA verification:', error)
+    logger.error('Error during MFA verification', error as Error)
     return {
       success: false,
       requiresBackupCode: false,
@@ -489,7 +490,7 @@ export async function enrollMFA(userId: string, email: string, issuer?: string):
       backupCodes,
     }
   } catch (error) {
-    console.error('Error enrolling MFA:', error)
+    logger.error('Error enrolling MFA', error as Error)
     return {
       success: false,
       error: 'Failed to enroll MFA',

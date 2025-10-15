@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAdminAuth } from '@/lib/api-auth-middleware'
 import { serverDbManager } from '@/lib/server-db'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 /**
@@ -49,7 +50,7 @@ export const GET = withAdminAuth(async (request) => {
       }))
     })
   } catch (error: any) {
-    console.error('Error fetching face embeddings:', error)
+    logger.error('Error fetching face embeddings', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch face embeddings' },
       { status: 500 }
@@ -137,7 +138,7 @@ export const POST = withAdminAuth(async (request) => {
       }
     })
   } catch (error: any) {
-    console.error('Error creating face embedding:', error)
+    logger.error('Error creating face embedding', error as Error)
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to create face embedding' },
       { status: 500 }
@@ -174,7 +175,7 @@ export const DELETE = withAdminAuth(async (request) => {
       message: 'Face embedding deleted successfully'
     })
   } catch (error: any) {
-    console.error('Error deleting face embedding:', error)
+    logger.error('Error deleting face embedding', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to delete face embedding' },
       { status: 500 }

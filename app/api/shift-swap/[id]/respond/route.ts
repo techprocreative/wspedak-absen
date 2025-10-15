@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyJWT } from "@/lib/auth";
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 import { createClient } from "@supabase/supabase-js";
 
@@ -131,7 +132,7 @@ export async function POST(
       );
     }
   } catch (error: any) {
-    console.error("Error responding to shift swap:", error);
+    logger.error('Error responding to shift swap', error as Error);
     return NextResponse.json(
       { error: error.message || "Failed to respond to shift swap" },
       { status: 500 }

@@ -6,6 +6,7 @@
 
 import { FaceEmbedding } from './face-recognition';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export interface FaceStorageOptions {
   compressionEnabled?: boolean;
   compressionLevel?: number; // 0-9, where 9 is highest compression
@@ -52,9 +53,9 @@ export class FaceStorage {
     try {
       this.db = await this.openDatabase();
       this.startMaintenanceTasks();
-      console.log('Face storage database initialized');
+      logger.info('Face storage database initialized');
     } catch (error) {
-      console.error('Failed to initialize face storage database:', error);
+      logger.error('Failed to initialize face storage database', error as Error);
       throw new Error('Face storage database initialization failed');
     }
   }
@@ -116,7 +117,7 @@ export class FaceStorage {
         };
       });
     } catch (error) {
-      console.error('Failed to store face embedding:', error);
+      logger.error('Failed to store face embedding', error as Error);
       throw new Error('Failed to store face embedding');
     }
   }
@@ -156,7 +157,7 @@ export class FaceStorage {
         };
       });
     } catch (error) {
-      console.error('Failed to retrieve face embedding:', error);
+      logger.error('Failed to retrieve face embedding', error as Error);
       throw new Error('Failed to retrieve face embedding');
     }
   }
@@ -193,7 +194,7 @@ export class FaceStorage {
         };
       });
     } catch (error) {
-      console.error('Failed to retrieve face embeddings:', error);
+      logger.error('Failed to retrieve face embeddings', error as Error);
       throw new Error('Failed to retrieve face embeddings');
     }
   }
@@ -229,7 +230,7 @@ export class FaceStorage {
         };
       });
     } catch (error) {
-      console.error('Failed to retrieve all face embeddings:', error);
+      logger.error('Failed to retrieve all face embeddings', error as Error);
       throw new Error('Failed to retrieve all face embeddings');
     }
   }
@@ -258,7 +259,7 @@ export class FaceStorage {
         };
       });
     } catch (error) {
-      console.error('Failed to delete face embedding:', error);
+      logger.error('Failed to delete face embedding', error as Error);
       throw new Error('Failed to delete face embedding');
     }
   }
@@ -291,7 +292,7 @@ export class FaceStorage {
         };
       });
     } catch (error) {
-      console.error('Failed to delete face embeddings:', error);
+      logger.error('Failed to delete face embeddings', error as Error);
       throw new Error('Failed to delete face embeddings');
     }
   }
@@ -323,7 +324,7 @@ export class FaceStorage {
         lastCleanup: lastCleanup ? new Date(lastCleanup) : undefined,
       };
     } catch (error) {
-      console.error('Failed to get database stats:', error);
+      logger.error('Failed to get database stats', error as Error);
       throw new Error('Failed to get database stats');
     }
   }
@@ -357,7 +358,7 @@ export class FaceStorage {
       
       return backupId;
     } catch (error) {
-      console.error('Failed to backup face data:', error);
+      logger.error('Failed to backup face data', error as Error);
       throw new Error('Failed to backup face data');
     }
   }
@@ -390,9 +391,9 @@ export class FaceStorage {
         await this.storeFaceEmbedding(embedding);
       }
       
-      console.log('Face data restored successfully');
+      logger.info('Face data restored successfully');
     } catch (error) {
-      console.error('Failed to restore face data:', error);
+      logger.error('Failed to restore face data', error as Error);
       throw new Error('Failed to restore face data');
     }
   }
@@ -460,7 +461,7 @@ export class FaceStorage {
       
       return deletedCount;
     } catch (error) {
-      console.error('Failed to cleanup face data:', error);
+      logger.error('Failed to cleanup face data', error as Error);
       throw new Error('Failed to cleanup face data');
     }
   }
@@ -489,7 +490,7 @@ export class FaceStorage {
         };
       });
     } catch (error) {
-      console.error('Failed to clear face embeddings:', error);
+      logger.error('Failed to clear face embeddings', error as Error);
       throw new Error('Failed to clear face embeddings');
     }
   }
@@ -588,9 +589,9 @@ export class FaceStorage {
       this.cleanupTimer = setInterval(async () => {
         try {
           await this.cleanupFaceData();
-          console.log('Face data cleanup completed');
+          logger.info('Face data cleanup completed');
         } catch (error) {
-          console.error('Face data cleanup failed:', error);
+          logger.error('Face data cleanup failed', error as Error);
         }
       }, this.options.cleanupInterval * 60 * 1000);
     }
@@ -600,9 +601,9 @@ export class FaceStorage {
       this.backupTimer = setInterval(async () => {
         try {
           await this.backupFaceData();
-          console.log('Face data backup completed');
+          logger.info('Face data backup completed');
         } catch (error) {
-          console.error('Face data backup failed:', error);
+          logger.error('Face data backup failed', error as Error);
         }
       }, this.options.backupInterval * 60 * 1000);
     }

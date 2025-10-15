@@ -3,6 +3,7 @@ import { serverDbManager } from '@/lib/server-db'
 import { hasAnyServerRole } from '@/lib/server-auth'
 import { z } from 'zod'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
@@ -248,7 +249,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching dashboard statistics:', error)
+    logger.error('Error fetching dashboard statistics', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch dashboard statistics' },
       { status: 500 }

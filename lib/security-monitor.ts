@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Security Monitoring and Event Logging System
  * Provides comprehensive security monitoring and event tracking
@@ -277,7 +279,7 @@ export class SecurityMonitor {
         }
       }
     } catch (error) {
-      console.error('Error loading persisted security data:', error);
+      logger.error('Error loading persisted security data', error as Error);
     }
   }
 
@@ -303,7 +305,7 @@ export class SecurityMonitor {
       
       localStorage.setItem(this.options.persistenceKey!, JSON.stringify(data));
     } catch (error) {
-      console.error('Error persisting security data:', error);
+      logger.error('Error persisting security data', error as Error);
     }
   }
 
@@ -521,7 +523,7 @@ export class SecurityMonitor {
           this.blockAction(rule, event, action.config);
           break;
         case 'log':
-          console.warn(`[SECURITY] Rule "${rule.name}" triggered:`, event);
+          logger.warn('Rule "${rule.name}" triggered:', event);
           break;
         case 'notify':
           this.sendNotification(rule, event, action.config);
@@ -589,7 +591,7 @@ export class SecurityMonitor {
   private blockAction(rule: SecurityRule, event: SecurityEvent, config: Record<string, any>): void {
     // This is a placeholder implementation
     // In a real application, you would implement actual blocking logic
-    console.warn(`[SECURITY] Blocking action triggered by rule "${rule.name}":`, event);
+    logger.warn('Blocking action triggered by rule "${rule.name}":', event);
   }
 
   /**
@@ -598,7 +600,7 @@ export class SecurityMonitor {
   private sendNotification(rule: SecurityRule, event: SecurityEvent, config: Record<string, any>): void {
     // This is a placeholder implementation
     // In a real application, you would implement actual notification logic
-    console.warn(`[SECURITY] Notification sent for rule "${rule.name}":`, event);
+    logger.warn('Notification sent for rule "${rule.name}":', event);
   }
 
   /**
@@ -607,7 +609,7 @@ export class SecurityMonitor {
   private executeCustomAction(rule: SecurityRule, event: SecurityEvent, config: Record<string, any>): void {
     // This is a placeholder implementation
     // In a real application, you would implement custom action logic
-    console.warn(`[SECURITY] Custom action executed for rule "${rule.name}":`, event);
+    logger.warn('Custom action executed for rule "${rule.name}":', event);
   }
 
   /**
@@ -641,7 +643,7 @@ export class SecurityMonitor {
       try {
         callback(event);
       } catch (error) {
-        console.error('Error in security alert callback:', error);
+        logger.error('Error in security alert callback', error as Error);
       }
     });
   }
@@ -654,7 +656,7 @@ export class SecurityMonitor {
       try {
         callback(threat);
       } catch (error) {
-        console.error('Error in security threat callback:', error);
+        logger.error('Error in security threat callback', error as Error);
       }
     });
   }

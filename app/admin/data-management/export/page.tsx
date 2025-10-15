@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Layout is provided by app/admin/layout.tsx
 import {
   Download,
@@ -273,7 +274,7 @@ export default function DataExportPage() {
         .map(field => field.key)
       setSelectedFields(defaultFields)
     } catch (error) {
-      console.error("Error fetching export data:", error)
+      logger.error('Error fetching export data', error as Error)
     } finally {
       setLoading(false)
     }

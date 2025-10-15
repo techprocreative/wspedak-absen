@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Performance Metrics Collector
  * Provides performance metrics collection for the application
@@ -104,7 +106,7 @@ export class PerformanceMetricsCollector {
     // Start report interval
     this.startReportInterval();
     
-    console.log('Performance metrics collector initialized');
+    logger.info('Performance metrics collector initialized');
   }
 
   /**
@@ -120,7 +122,7 @@ export class PerformanceMetricsCollector {
     // Generate final report
     this.generateReport();
     
-    console.log('Performance metrics collector cleaned up');
+    logger.info('Performance metrics collector cleaned up');
   }
 
   /**
@@ -340,9 +342,9 @@ export class PerformanceMetricsCollector {
     for (const threshold of this.thresholds) {
       if (threshold.metric === metric.name) {
         if (metric.value >= threshold.critical) {
-          console.error(`Critical performance alert: ${metric.name} is ${metric.value}${metric.unit} (threshold: ${threshold.critical}${threshold.unit})`);
+          logger.error('Critical performance alert: ${metric.name} is ${metric.value}${metric.unit} (threshold: ${threshold.critical})', new Error(), { value: threshold.unit });
         } else if (metric.value >= threshold.warning) {
-          console.warn(`Performance warning: ${metric.name} is ${metric.value}${metric.unit} (threshold: ${threshold.warning}${threshold.unit})`);
+          logger.warn('Performance warning: ${metric.name} is ${metric.value}${metric.unit} (threshold: ${threshold.warning}${threshold.unit})');
         }
       }
     }
@@ -516,7 +518,7 @@ export class PerformanceMetricsCollector {
         },
         body: JSON.stringify(report),
       }).catch(error => {
-        console.error('Failed to send performance report:', error);
+        logger.error('Failed to send performance report', error as Error);
       });
     }
   }

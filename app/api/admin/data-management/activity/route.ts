@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAdminAuth } from '@/lib/api-auth-middleware'
 import { serverDbManager } from '@/lib/server-db'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 async function GET(request: NextRequest) {
@@ -44,7 +45,7 @@ async function GET(request: NextRequest) {
       data: activities
     })
   } catch (error) {
-    console.error('Error fetching activity:', error)
+    logger.error('Error fetching activity', error as Error)
     return NextResponse.json(
       {
         success: false,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAdminAuth } from '@/lib/api-auth-middleware'
 import { serverDbManager } from '@/lib/server-db'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
@@ -101,7 +102,7 @@ async function GET(request: NextRequest) {
       data: stats
     })
   } catch (error) {
-    console.error('Analytics error:', error)
+    logger.error('Analytics error', error as Error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

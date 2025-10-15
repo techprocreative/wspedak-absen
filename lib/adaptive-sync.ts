@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Adaptive Sync Manager
  * Provides adaptive synchronization intervals based on network conditions
@@ -82,7 +84,7 @@ export class AdaptiveSyncManager {
     // Start periodic network checks
     this.startNetworkChecks();
     
-    console.log('Adaptive sync manager initialized');
+    logger.info('Adaptive sync manager initialized');
   }
 
   /**
@@ -92,7 +94,7 @@ export class AdaptiveSyncManager {
     // Stop network checks
     this.stopNetworkChecks();
     
-    console.log('Adaptive sync manager cleaned up');
+    logger.info('Adaptive sync manager cleaned up');
   }
 
   /**
@@ -155,12 +157,12 @@ export class AdaptiveSyncManager {
       // Check if network check took too long
       if (this.options.enablePerformanceOptimization && 
           endTime - startTime > this.options.maxNetworkCheckTime!) {
-        console.warn(`Network condition check took too long: ${endTime - startTime}ms`);
+        logger.warn('Network condition check took too long: ${endTime - startTime}ms');
       }
       
       return networkCondition;
     } catch (error) {
-      console.error('Failed to update network condition:', error);
+      logger.error('Failed to update network condition', error as Error);
       return null;
     }
   }
@@ -275,7 +277,7 @@ export class AdaptiveSyncManager {
         // Notify callbacks
         this.syncIntervalChangeCallbacks.forEach(callback => callback(config));
         
-        console.log(`Sync interval adapted to ${newInterval / 1000}s: ${reason}`);
+        logger.info('Sync interval adapted to ${newInterval / 1000}s: ${reason}');
         
         return config;
       }

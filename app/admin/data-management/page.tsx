@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Layout is provided by app/admin/layout.tsx
 import {
   Database,
@@ -101,7 +102,7 @@ export default function DataManagementPage() {
         setRecentActivity(activityResponse.data)
       }
     } catch (error) {
-      console.error("Error fetching data management stats:", error)
+      logger.error('Error fetching data management stats', error as Error)
     } finally {
       setLoading(false)
     }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hasAnyServerRole } from '@/lib/server-auth'
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import {
   auditLogManager
 } from '@/lib/audit-log'
@@ -278,7 +279,7 @@ export async function GET(request: NextRequest) {
         )
     }
   } catch (error) {
-    console.error('Error in audit log API:', error)
+    logger.error('Error in audit log API', error as Error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -359,7 +360,7 @@ export async function DELETE(request: NextRequest) {
         )
     }
   } catch (error) {
-    console.error('Error clearing audit logs:', error)
+    logger.error('Error clearing audit logs', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to clear audit logs' },
       { status: 500 }

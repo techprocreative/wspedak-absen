@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { signSessionCookie, type AdminSessionPayload } from '@/lib/session'
 import { validateSessionToken } from '@/lib/server-auth'
+import { logger, logAuthEvent } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
     })
     return res
   } catch (error) {
-    console.error('Error setting admin session cookie:', error)
+    logger.error('Error setting admin session cookie', error as Error)
     return NextResponse.json({ success: false, error: 'Failed to set session cookie' }, { status: 500 })
   }
 }
@@ -80,7 +81,7 @@ export async function DELETE() {
     })
     return res
   } catch (error) {
-    console.error('Error clearing admin session cookie:', error)
+    logger.error('Error clearing admin session cookie', error as Error)
     return NextResponse.json({ success: false, error: 'Failed to clear session cookie' }, { status: 500 })
   }
 }

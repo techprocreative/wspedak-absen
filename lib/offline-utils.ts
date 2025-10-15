@@ -2,6 +2,7 @@
 import { SyncStatus, SyncDirection, SyncPriority } from './sync-manager'
 import { formatDistanceToNow, format } from 'date-fns'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Network status types
 export type NetworkStatus = 'online' | 'offline' | 'connecting' | 'disconnecting'
 
@@ -212,7 +213,7 @@ export const OfflineMessages = {
     {
       action: {
         label: 'Learn More',
-        onClick: () => console.log('Show offline help')
+        onClick: () => logger.info('Show offline help')
       }
     }
   ),
@@ -249,7 +250,7 @@ export const OfflineMessages = {
     {
       action: {
         label: 'Retry',
-        onClick: () => console.log('Retry sync')
+        onClick: () => logger.info('Retry sync')
       }
     }
   ),
@@ -261,7 +262,7 @@ export const OfflineMessages = {
     {
       action: {
         label: 'Resolve Conflicts',
-        onClick: () => console.log('Show conflict resolution')
+        onClick: () => logger.info('Show conflict resolution')
       }
     }
   ),

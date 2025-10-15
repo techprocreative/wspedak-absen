@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DataArchivalManager, ArchivalRule, CleanupRule } from '@/lib/data-archival'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Mock authentication check
 // In a real implementation, this would use proper authentication
 async function checkAuth() {
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
       })
     }
   } catch (error) {
-    console.error('Archival/Cleanup error:', error)
+    logger.error('Archival/Cleanup error', error as Error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -189,7 +190,7 @@ export async function GET(request: NextRequest) {
         )
     }
   } catch (error) {
-    console.error('Archival data error:', error)
+    logger.error('Archival data error', error as Error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -238,7 +239,7 @@ export async function PUT(request: NextRequest) {
       data: rule
     })
   } catch (error) {
-    console.error('Rule creation error:', error)
+    logger.error('Rule creation error', error as Error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -306,7 +307,7 @@ export async function DELETE(request: NextRequest) {
       message
     })
   } catch (error) {
-    console.error('Deletion error:', error)
+    logger.error('Deletion error', error as Error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

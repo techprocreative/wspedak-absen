@@ -7,6 +7,7 @@ import { adaptiveSyncManager, AdaptiveSyncOptions } from './adaptive-sync'
 import { batchSizeOptimizer, BatchOptimizerOptions } from './batch-optimizer'
 import { syncPrioritizer, SyncPriorityOptions } from './sync-prioritizer'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Sync status enum
 export enum SyncStatus {
   IDLE = 'idle',
@@ -180,10 +181,10 @@ export class SyncManager {
       // Set up sync callback
       incrementalSyncManager.onSyncComplete((result) => {
         if (result.success) {
-          console.log(`Incremental sync completed: ${result.changesSynced} changes synced`)
+          logger.info('Incremental sync completed: ${result.changesSynced} changes synced')
           this.emit('incrementalSyncCompleted', result)
         } else {
-          console.error(`Incremental sync failed: ${result.error?.message}`)
+          logger.error('Incremental sync failed:', new Error(), { value: result.error?.message })
           this.emit('incrementalSyncFailed', result)
         }
       })
@@ -195,7 +196,7 @@ export class SyncManager {
       
       // Set up sync interval change callback
       adaptiveSyncManager.onSyncIntervalChange((config) => {
-        console.log(`Sync interval adapted to ${config.interval / 1000}s: ${config.reason}`)
+        logger.info('Sync interval adapted to ${config.interval / 1000}s: ${config.reason}')
         this.config.syncInterval = config.interval
         this.startSyncInterval()
         this.emit('syncIntervalChanged', config)
@@ -208,7 +209,7 @@ export class SyncManager {
       
       // Set up batch size change callback
       batchSizeOptimizer.onBatchSizeChange((config) => {
-        console.log(`Batch size optimized to ${config.batchSize}: ${config.reason}`)
+        logger.info('Batch size optimized to ${config.batchSize}: ${config.reason}')
         this.config.batchSize = config.batchSize
         this.emit('batchSizeChanged', config)
       })
@@ -794,7 +795,7 @@ export class SyncManager {
         remoteData = data
       }
     } catch (error) {
-      console.error('Error fetching remote data for conflict resolution:', error)
+      logger.error('Error fetching remote data for conflict resolution', error as Error)
       return null
     }
     

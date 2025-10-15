@@ -4,8 +4,10 @@ import { supabase, supabaseService } from './supabase'
 import { storageService } from './storage'
 import { secureStorage, setSecureItem, getSecureItem, removeSecureItem, setSecureSessionData, getSecureSessionData } from './secure-storage'
 import { User, Session } from '@supabase/supabase-js'
+// Use bcryptjs for client-side compatibility (pure JS, no native modules)
 import bcrypt from 'bcryptjs'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // User role types
 export type UserRole = "employee" | "admin" | "hr" | "manager"
 
@@ -105,7 +107,7 @@ export const setAuthSession = async (session: AuthSession): Promise<void> => {
         body: JSON.stringify(serverSession),
       })
     } catch (e) {
-      console.warn('Failed to set admin session cookie:', e)
+      logger.warn('Failed to set admin session cookie', { value: e })
     }
   }
 }
@@ -121,7 +123,7 @@ export const clearAuthSession = (): void => {
     try {
       await fetch('/api/auth/session', { method: 'DELETE' })
     } catch (e) {
-      console.warn('Failed to clear admin session cookie:', e)
+      logger.warn('Failed to clear admin session cookie', { value: e })
     }
   })()
 }
@@ -211,7 +213,7 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
     
     return false
   } catch (error) {
-    console.error('Password verification error:', error)
+    logger.error('Password verification error', error as Error)
     return false
   }
 }
@@ -231,7 +233,7 @@ const simpleHash = (password: string): string => {
 export const authenticateUser = async (email: string, password: string, rememberMe = false): Promise<AuthSession> => {
   try {
     // Debug logging
-    console.log('authenticateUser called:', {
+    logger.info('authenticateUser called', {
       email,
       passwordLength: password.length,
       rememberMe,
@@ -243,7 +245,7 @@ export const authenticateUser = async (email: string, password: string, remember
     // Try to authenticate with Supabase first
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     
-    console.log('Supabase auth result:', {
+    logger.info('Supabase auth result', {
       success: !error,
       error: error?.message,
       hasData: !!data,
@@ -269,7 +271,7 @@ export const authenticateUser = async (email: string, password: string, remember
           .maybeSingle()
 
         if (profileError) {
-          console.warn('Failed to load user profile for role resolution:', profileError)
+          logger.warn('Failed to load user profile for role resolution', { value: profileError })
         } else if (profile) {
           if (profile.role) {
             role = normalizeUserRole(profile.role)
@@ -279,7 +281,7 @@ export const authenticateUser = async (email: string, password: string, remember
           }
         }
       } catch (profileError) {
-        console.warn('Unexpected error while loading user profile:', profileError)
+        logger.warn('Unexpected error while loading user profile', { value: profileError })
       }
 
       // Create extended user object
@@ -427,7 +429,7 @@ export const signOut = async (): Promise<void> => {
       clearOfflineCredentials()
     }
   } catch (error) {
-    console.error('Error signing out:', error)
+    logger.error('Error signing out', error as Error)
     // Still clear local storage even if Supabase sign out fails
     clearAuthSession()
   }
@@ -466,7 +468,7 @@ export const refreshSession = async (): Promise<AuthSession | null> => {
     
     return null
   } catch (error) {
-    console.error('Error refreshing session:', error)
+    logger.error('Error refreshing session', error as Error)
     return null
   }
 }
@@ -513,7 +515,7 @@ export const initializeAuth = async (): Promise<AuthSession> => {
       isAuthenticated: false,
     }
   } catch (error) {
-    console.error('Error initializing auth:', error)
+    logger.error('Error initializing auth', error as Error)
     return {
       user: null,
       session: null,
@@ -540,12 +542,12 @@ export const getAdminSession = (): AdminSession | null => {
 
 export const setAdminSession = (session: AdminSession): void => {
   // This function is kept for backward compatibility but should not be used in new code
-  console.warn('setAdminSession is deprecated. Use the new authentication system instead.')
+  logger.warn('setAdminSession is deprecated. Use the new authentication system instead.')
 }
 
 export const clearAdminSession = (): void => {
   // This function is kept for backward compatibility but should not be used in new code
-  console.warn('clearAdminSession is deprecated. Use signOut instead.')
+  logger.warn('clearAdminSession is deprecated. Use signOut instead.')
   clearAuthSession()
 }
 
@@ -626,7 +628,7 @@ export async function verifyJWT(request: Request): Promise<JWTVerifyResult> {
       }
     }
   } catch (error) {
-    console.error('JWT verification error:', error)
+    logger.error('JWT verification error', error as Error)
     return {
       valid: false,
       error: 'Token verification failed'

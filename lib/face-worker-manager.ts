@@ -8,6 +8,7 @@
 import { FaceDetection, FaceEmbedding, FaceMatch } from './face-recognition';
 import { videoProcessor, VideoProcessingOptions } from './video-processor';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Worker message types
 export enum WorkerMessageType {
   INIT = 'INIT',
@@ -136,7 +137,7 @@ class FaceWorkerManager {
       // Initialize worker
       await this.sendMessage(WorkerMessageType.INIT, { config: this.config });
     } catch (error) {
-      console.error('Failed to initialize face recognition worker:', error);
+      logger.error('Failed to initialize face recognition worker', error as Error);
       throw error;
     }
   }
@@ -163,7 +164,7 @@ class FaceWorkerManager {
    * Handle worker errors
    */
   private handleWorkerError(event: ErrorEvent): void {
-    console.error('Face recognition worker error:', event);
+    logger.error('Face recognition worker error', event as Error);
     
     // Reject all pending messages
     for (const [id, resolver] of this.pendingMessages.entries()) {
@@ -256,7 +257,7 @@ class FaceWorkerManager {
 
       return result;
     } catch (error) {
-      console.error('Face detection failed:', error);
+      logger.error('Face detection failed', error as Error);
       throw error;
     }
   }
@@ -295,7 +296,7 @@ class FaceWorkerManager {
 
       return result;
     } catch (error) {
-      console.error('Face detection failed:', error);
+      logger.error('Face detection failed', error as Error);
       throw error;
     }
   }
@@ -341,7 +342,7 @@ class FaceWorkerManager {
 
       return result;
     } catch (error) {
-      console.error('Face recognition failed:', error);
+      logger.error('Face recognition failed', error as Error);
       throw error;
     }
   }
@@ -396,7 +397,7 @@ class FaceWorkerManager {
 
       return result;
     } catch (error) {
-      console.error('Embedding generation failed:', error);
+      logger.error('Embedding generation failed', error as Error);
       throw error;
     }
   }
@@ -433,7 +434,7 @@ class FaceWorkerManager {
 
       return result;
     } catch (error) {
-      console.error('Embedding generation failed:', error);
+      logger.error('Embedding generation failed', error as Error);
       throw error;
     }
   }
@@ -468,7 +469,7 @@ class FaceWorkerManager {
 
       return result;
     } catch (error) {
-      console.error('Face matching failed:', error);
+      logger.error('Face matching failed', error as Error);
       throw error;
     }
   }
@@ -494,7 +495,7 @@ class FaceWorkerManager {
 
       return result;
     } catch (error) {
-      console.error('Config update failed:', error);
+      logger.error('Config update failed', error as Error);
       throw error;
     }
   }
@@ -515,7 +516,7 @@ class FaceWorkerManager {
       
       return result.metrics;
     } catch (error) {
-      console.error('Failed to get performance metrics:', error);
+      logger.error('Failed to get performance metrics', error as Error);
       throw error;
     }
   }
@@ -544,7 +545,7 @@ class FaceWorkerManager {
         this.pendingMessages.delete(id);
       }
     } catch (error) {
-      console.error('Worker cleanup failed:', error);
+      logger.error('Worker cleanup failed', error as Error);
       throw error;
     }
   }

@@ -3,6 +3,7 @@ import { storageService } from './storage';
 import { syncManager } from './sync-manager';
 import { AttendanceRecord, AttendanceStats, AttendancePolicy, DailyAttendanceRecord } from '@/types';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export class AttendanceService {
   private static instance: AttendanceService;
   private policy: AttendancePolicy | null = null;
@@ -34,7 +35,7 @@ export class AttendanceService {
         .single();
 
       if (error) {
-        console.error('Error loading attendance policy:', error);
+        logger.error('Error loading attendance policy', error as Error);
         // Set default policy if none exists
         this.policy = {
           id: 'default',
@@ -58,7 +59,7 @@ export class AttendanceService {
         });
       }
     } catch (error) {
-      console.error('Error in loadPolicy:', error);
+      logger.error('Error in loadPolicy', error as Error);
     }
   }
 
@@ -78,7 +79,7 @@ export class AttendanceService {
         .single();
 
       if (error) {
-        console.error('Error updating attendance policy:', error);
+        logger.error('Error updating attendance policy', error as Error);
         return null;
       }
 
@@ -92,7 +93,7 @@ export class AttendanceService {
       });
       return data;
     } catch (error) {
-      console.error('Error in updatePolicy:', error);
+      logger.error('Error in updatePolicy', error as Error);
       return null;
     }
   }
@@ -146,7 +147,7 @@ export class AttendanceService {
 
       return newRecord;
     } catch (error) {
-      console.error('Error in clockIn:', error);
+      logger.error('Error in clockIn', error as Error);
       throw error;
     }
   }
@@ -200,7 +201,7 @@ export class AttendanceService {
 
       return { ...record, ...updatedRecord };
     } catch (error) {
-      console.error('Error in clockOut:', error);
+      logger.error('Error in clockOut', error as Error);
       throw error;
     }
   }
@@ -254,13 +255,13 @@ export class AttendanceService {
           // No records found
           return null;
         }
-        console.error('Error fetching today attendance:', error);
+        logger.error('Error fetching today attendance', error as Error);
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Error in getTodayAttendance:', error);
+      logger.error('Error in getTodayAttendance', error as Error);
       return null;
     }
   }
@@ -327,7 +328,7 @@ export class AttendanceService {
         .order('date', { ascending: false });
 
       if (error) {
-        console.error('Error fetching attendance history:', error);
+        logger.error('Error fetching attendance history', error as Error);
         return dailyRecords;
       }
 
@@ -344,7 +345,7 @@ export class AttendanceService {
 
       return mergedRecords;
     } catch (error) {
-      console.error('Error in getAttendanceHistory:', error);
+      logger.error('Error in getAttendanceHistory', error as Error);
       return [];
     }
   }
@@ -431,7 +432,7 @@ export class AttendanceService {
 
       return stats;
     } catch (error) {
-      console.error('Error in calculateAttendanceStats:', error);
+      logger.error('Error in calculateAttendanceStats', error as Error);
       return {
         totalEmployees: 0,
         presentToday: 0,
@@ -491,7 +492,7 @@ export class AttendanceService {
 
       return newRecord;
     } catch (error) {
-      console.error('Error in markAbsent:', error);
+      logger.error('Error in markAbsent', error as Error);
       throw error;
     }
   }
@@ -545,13 +546,13 @@ export class AttendanceService {
           // No records found
           return null;
         }
-        console.error('Error fetching attendance by date:', error);
+        logger.error('Error fetching attendance by date', error as Error);
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Error in getAttendanceByDate:', error);
+      logger.error('Error in getAttendanceByDate', error as Error);
       return null;
     }
   }
@@ -561,7 +562,7 @@ export class AttendanceService {
       // Trigger sync process
       await syncManager.sync();
     } catch (error) {
-      console.error('Error in syncAttendanceRecords:', error);
+      logger.error('Error in syncAttendanceRecords', error as Error);
     }
   }
 }

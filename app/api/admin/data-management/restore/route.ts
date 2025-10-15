@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as JSZip from 'jszip'
 import { createServerSupabaseClient, checkAdminAuth } from '@/lib/supabase-server'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 const TABLES_TO_BACKUP = [
@@ -199,7 +200,7 @@ export async function POST(request: NextRequest) {
       message: `Restored ${restoredRecords} of ${totalRecords} records`
     })
   } catch (error: any) {
-    console.error('Restore error:', error)
+    logger.error('Restore error', error as Error)
     return NextResponse.json({
       error: 'Internal server error',
       details: error.message

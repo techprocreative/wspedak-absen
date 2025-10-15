@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { businessIntelligence } from '@/lib/analytics/business-intelligence';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error fetching attendance analytics:', error);
+    logger.error('Error fetching attendance analytics', error as Error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch attendance analytics' },
       { status: 500 }
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
       error: 'Invalid request'
     }, { status: 400 });
   } catch (error) {
-    console.error('Error in attendance analytics POST:', error);
+    logger.error('Error in attendance analytics POST', error as Error);
     return NextResponse.json(
       { success: false, error: 'Failed to process request' },
       { status: 500 }

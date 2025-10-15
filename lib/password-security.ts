@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { secureStorage } from './secure-storage'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Password security configuration
 const PASSWORD_HISTORY_KEY = 'password_history'
 const ACCOUNT_LOCKOUT_KEY = 'account_lockout'
@@ -100,7 +101,7 @@ export class PasswordSecurityManager {
       const storedPolicy = secureStorage.getItem<PasswordPolicy>(PASSWORD_POLICY_KEY)
       return storedPolicy || DEFAULT_PASSWORD_POLICY
     } catch (error) {
-      console.error('Error loading password policy:', error)
+      logger.error('Error loading password policy', error as Error)
       return DEFAULT_PASSWORD_POLICY
     }
   }
@@ -111,7 +112,7 @@ export class PasswordSecurityManager {
       secureStorage.setItem(PASSWORD_POLICY_KEY, policy)
       this.passwordPolicy = policy
     } catch (error) {
-      console.error('Error saving password policy:', error)
+      logger.error('Error saving password policy', error as Error)
       throw new Error('Failed to save password policy')
     }
   }
@@ -132,7 +133,7 @@ export class PasswordSecurityManager {
       const saltRounds = DEFAULT_SALT_ROUNDS
       return await bcrypt.hash(password, saltRounds)
     } catch (error) {
-      console.error('Error hashing password:', error)
+      logger.error('Error hashing password', error as Error)
       throw new Error('Failed to hash password')
     }
   }
@@ -142,7 +143,7 @@ export class PasswordSecurityManager {
     try {
       return await bcrypt.compare(password, hash)
     } catch (error) {
-      console.error('Error verifying password:', error)
+      logger.error('Error verifying password', error as Error)
       return false
     }
   }
@@ -262,7 +263,7 @@ export class PasswordSecurityManager {
       // Save updated history
       this.savePasswordHistory(userId, history)
     } catch (error) {
-      console.error('Error adding password to history:', error)
+      logger.error('Error adding password to history', error as Error)
     }
   }
 
@@ -276,7 +277,7 @@ export class PasswordSecurityManager {
         timestamps: [],
       }
     } catch (error) {
-      console.error('Error retrieving password history:', error)
+      logger.error('Error retrieving password history', error as Error)
       return { userId, hashedPasswords: [], timestamps: [] }
     }
   }
@@ -295,7 +296,7 @@ export class PasswordSecurityManager {
       
       secureStorage.setItem(PASSWORD_HISTORY_KEY, allHistory)
     } catch (error) {
-      console.error('Error saving password history:', error)
+      logger.error('Error saving password history', error as Error)
     }
   }
 
@@ -312,7 +313,7 @@ export class PasswordSecurityManager {
       
       return false
     } catch (error) {
-      console.error('Error checking password history:', error)
+      logger.error('Error checking password history', error as Error)
       return false
     }
   }
@@ -343,7 +344,7 @@ export class PasswordSecurityManager {
       
       secureStorage.setItem(ACCOUNT_LOCKOUT_KEY, lockouts)
     } catch (error) {
-      console.error('Error recording failed attempt:', error)
+      logger.error('Error recording failed attempt', error as Error)
     }
   }
 
@@ -362,7 +363,7 @@ export class PasswordSecurityManager {
         secureStorage.setItem(ACCOUNT_LOCKOUT_KEY, lockouts)
       }
     } catch (error) {
-      console.error('Error clearing failed attempts:', error)
+      logger.error('Error clearing failed attempts', error as Error)
     }
   }
 
@@ -371,7 +372,7 @@ export class PasswordSecurityManager {
     try {
       return secureStorage.getItem<AccountLockout[]>(ACCOUNT_LOCKOUT_KEY) || []
     } catch (error) {
-      console.error('Error retrieving account lockouts:', error)
+      logger.error('Error retrieving account lockouts', error as Error)
       return []
     }
   }
@@ -407,7 +408,7 @@ export class PasswordSecurityManager {
       
       return { isLocked: true }
     } catch (error) {
-      console.error('Error checking account lockout:', error)
+      logger.error('Error checking account lockout', error as Error)
       return { isLocked: false }
     }
   }
@@ -471,7 +472,7 @@ export class PasswordSecurityManager {
         daysUntilExpiration,
       }
     } catch (error) {
-      console.error('Error changing password:', error)
+      logger.error('Error changing password', error as Error)
       return {
         success: false,
         requiresPasswordChange: false,
@@ -518,7 +519,7 @@ export class PasswordSecurityManager {
         daysUntilExpiration,
       }
     } catch (error) {
-      console.error('Error checking password expiry:', error)
+      logger.error('Error checking password expiry', error as Error)
       return {
         success: true,
         requiresPasswordChange: false,

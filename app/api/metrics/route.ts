@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { metricsCollector } from '@/lib/metrics-collector';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // GET /api/metrics - Get current metrics
 export async function GET(request: NextRequest) {
   try {
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response);
     }
   } catch (error) {
-    console.error('Metrics API error:', error);
+    logger.error('Metrics API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
       message: `Metric ${name} recorded`,
     });
   } catch (error) {
-    console.error('Metrics API error:', error);
+    logger.error('Metrics API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -139,7 +140,7 @@ export async function DELETE(request: NextRequest) {
       message: 'All metrics cleared',
     });
   } catch (error) {
-    console.error('Metrics API error:', error);
+    logger.error('Metrics API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

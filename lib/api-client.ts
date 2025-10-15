@@ -5,6 +5,7 @@
 
 import { getSecureItem } from './secure-storage'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export class ApiClient {
   private static getToken(): string | null {
     if (typeof window === 'undefined') return null
@@ -16,7 +17,7 @@ export class ApiClient {
         return authSession.session.access_token
       }
     } catch (error) {
-      console.error('Error getting auth token:', error)
+      logger.error('Error getting auth token', error as Error)
     }
 
     // Fallback to localStorage (legacy)
@@ -35,7 +36,7 @@ export class ApiClient {
     }
 
     if (!token) {
-      console.warn('No authentication token found. User may need to login.')
+      logger.warn('No authentication token found. User may need to login.')
     } else {
       headers['Authorization'] = `Bearer ${token}`
     }
@@ -58,7 +59,7 @@ export class ApiClient {
 
       return response.json()
     } catch (error) {
-      console.error(`API request failed for ${endpoint}:`, error)
+      logger.error('API request failed for ${endpoint}', error as Error)
       throw error
     }
   }

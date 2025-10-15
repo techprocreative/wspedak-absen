@@ -17,6 +17,7 @@ import { AttendanceRecordInput, AttendanceUpdateInput, attendanceRecordSchema, a
 import { Plus, Edit, Trash2, Eye, Clock, Calendar, MapPin, Camera, Users, TrendingUp, AlertCircle } from "lucide-react"
 import { z } from "zod"
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Define the attendance record interface for the table
 interface AttendanceRecordWithId {
   id: string
@@ -97,10 +98,10 @@ export default function AttendancePage() {
           total: data.pagination.total,
         }))
       } else {
-        console.error("Failed to fetch attendance records:", data.error)
+        logger.error('Failed to fetch attendance records', new Error(data.error))
       }
     } catch (error) {
-      console.error("Error fetching attendance records:", error)
+      logger.error('Error fetching attendance records', error as Error)
     } finally {
       setLoading(false)
     }
@@ -125,11 +126,11 @@ export default function AttendancePage() {
         setIsCreateModalOpen(false)
         fetchAttendanceRecords()
       } else {
-        console.error("Failed to create attendance record:", data.error)
+        logger.error('Failed to create attendance record:', new Error(data.error))
         throw new Error(data.error)
       }
     } catch (error) {
-      console.error("Error creating attendance record:", error)
+      logger.error('Error creating attendance record', error as Error)
       throw error
     }
   }
@@ -159,11 +160,11 @@ export default function AttendancePage() {
         setSelectedRecord(null)
         fetchAttendanceRecords()
       } else {
-        console.error("Failed to update attendance record:", data.error)
+        logger.error('Failed to update attendance record:', new Error(data.error))
         throw new Error(data.error)
       }
     } catch (error) {
-      console.error("Error updating attendance record:", error)
+      logger.error('Error updating attendance record', error as Error)
       throw error
     }
   }
@@ -191,7 +192,7 @@ export default function AttendancePage() {
         if (data.success) {
           fetchAttendanceRecords()
         } else {
-          console.error("Failed to delete attendance record:", data.error)
+          logger.error('Failed to delete attendance record:', new Error(data.error))
         }
       },
     })
@@ -221,7 +222,7 @@ export default function AttendancePage() {
           fetchAttendanceRecords()
           setSelectedRecords([])
         } else {
-          console.error("Failed to delete attendance records:", data.error)
+          logger.error('Failed to delete attendance records:', new Error(data.error))
         }
       },
     })
@@ -250,11 +251,11 @@ export default function AttendancePage() {
         setSelectedRecords([])
         fetchAttendanceRecords()
       } else {
-        console.error("Failed to update attendance records:", data.error)
+        logger.error('Failed to update attendance records:', new Error(data.error))
         throw new Error(data.error)
       }
     } catch (error) {
-      console.error("Error updating attendance records:", error)
+      logger.error('Error updating attendance records', error as Error)
       throw error
     }
   }
@@ -285,10 +286,10 @@ export default function AttendancePage() {
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
       } else {
-        console.error("Failed to export data")
+        logger.error('Failed to export data', new Error())
       }
     } catch (error) {
-      console.error("Error exporting data:", error)
+      logger.error('Error exporting data', error as Error)
     }
   }
 

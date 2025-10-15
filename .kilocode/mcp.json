@@ -1,17 +1,5 @@
 {
   "mcpServers": {
-    "qdrant": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-qdrant"
-      ],
-      "env": {
-        "QDRANT_URL": "https://8d578aeb-fe66-4fef-947a-45e66f74fb35.eu-west-1-0.aws.cloud.qdrant.io:6333",
-        "QDRANT_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.3xCSpp0K0LjBVMsCXwJC7O_esZ-mi1bv80icIDc04F0",
-        "COLLECTION_NAME": "star_charts",
-        "EMBEDDING_MODEL": ""
-      }
-    },
     "context7": {
       "command": "npx",
       "args": [

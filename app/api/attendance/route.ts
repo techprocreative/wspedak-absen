@@ -5,6 +5,7 @@ import { attendanceRecordSchema, attendanceQuerySchema } from '@/lib/validation-
 import { createAuthRateLimit, addSecurityHeaders, BruteForceProtection, logSecurityEvent } from '@/lib/security-middleware';
 import { verifyToken } from '@/lib/auth-middleware';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const GET = withValidation(
   attendanceQuerySchema,
   async (request: NextRequest, context, validatedData) => {
@@ -90,7 +91,7 @@ export const GET = withValidation(
       
       return addSecurityHeaders(response);
     } catch (error) {
-      console.error('Error fetching attendance records:', error);
+      logger.error('Error fetching attendance records', error as Error);
       logSecurityEvent('attendance_fetch_error', { error: error instanceof Error ? error.message : 'Unknown error' }, 'high');
       
       const response = NextResponse.json(
@@ -175,7 +176,7 @@ export const POST = withValidation(
       
       return addSecurityHeaders(response);
     } catch (error) {
-      console.error('Error creating attendance record:', error);
+      logger.error('Error creating attendance record', error as Error);
       logSecurityEvent('attendance_create_error', {
         error: error instanceof Error ? error.message : 'Unknown error'
       }, 'high');

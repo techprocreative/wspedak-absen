@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Transaction Batcher
  * Provides optimized transaction batching for database operations
@@ -70,7 +72,7 @@ export class TransactionBatcher {
       return;
     }
 
-    console.log('Transaction batcher initialized');
+    logger.info('Transaction batcher initialized');
   }
 
   /**
@@ -88,7 +90,7 @@ export class TransactionBatcher {
       this.processBatch();
     }
     
-    console.log('Transaction batcher cleaned up');
+    logger.info('Transaction batcher cleaned up');
   }
 
   /**
@@ -173,7 +175,7 @@ export class TransactionBatcher {
         await this.processStoreOperations(store, storeOperations);
       }
     } catch (error) {
-      console.error('Error processing batch:', error);
+      logger.error('Error processing batch', error as Error);
       
       // Reject all operations
       for (const operation of operations) {
@@ -484,7 +486,7 @@ export class TransactionBatcher {
     
     // If there are too many pending operations, process them immediately
     if (this.pendingOperations.length > this.options.maxBatchSize! * 2) {
-      console.warn('Too many pending operations, processing immediately');
+      logger.warn('Too many pending operations, processing immediately');
       this.processBatch();
     }
   }

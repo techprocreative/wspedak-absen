@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { systemMonitor } from '@/lib/system-monitor';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // GET /api/system - Get system information, metrics, or alerts
 export async function GET(request: NextRequest) {
   try {
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('System monitoring API error:', error);
+    logger.error('System monitoring API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('System monitoring API error:', error);
+    logger.error('System monitoring API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -138,7 +139,7 @@ export async function PATCH(request: NextRequest) {
       message,
     });
   } catch (error) {
-    console.error('System monitoring API error:', error);
+    logger.error('System monitoring API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -155,7 +156,7 @@ export async function DELETE(request: NextRequest) {
       message: 'System monitoring data cleared',
     });
   } catch (error) {
-    console.error('System monitoring API error:', error);
+    logger.error('System monitoring API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

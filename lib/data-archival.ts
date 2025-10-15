@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Define interfaces for data archival and cleanup
 export interface ArchivalResult {
   success: boolean
@@ -534,10 +535,10 @@ export class DataArchivalManager {
     try {
       // Mock implementation
       // In a real implementation, this would restore from archive
-      console.log(`Restoring archived record: ${archivedId}`)
+      logger.info('Restoring archived record: ${archivedId}')
       return true
     } catch (error) {
-      console.error(`Failed to restore archived record: ${archivedId}`, error)
+      logger.error('Failed to restore archived record: ${archivedId}', error as Error)
       return false
     }
   }
@@ -547,10 +548,10 @@ export class DataArchivalManager {
     try {
       // Mock implementation
       // In a real implementation, this would delete from archive
-      console.log(`Deleting archived record: ${archivedId}`)
+      logger.info('Deleting archived record: ${archivedId}')
       return true
     } catch (error) {
-      console.error(`Failed to delete archived record: ${archivedId}`, error)
+      logger.error('Failed to delete archived record: ${archivedId}', error as Error)
       return false
     }
   }
@@ -609,7 +610,7 @@ export class DataArchivalManager {
     try {
       // Mock implementation
       // In a real implementation, this would apply all enabled retention policies
-      console.log('Applying retention policies...')
+      logger.info('Applying retention policies...')
       
       return {
         policiesApplied: 2,
@@ -618,7 +619,7 @@ export class DataArchivalManager {
         errors: []
       }
     } catch (error) {
-      console.error('Failed to apply retention policies', error)
+      logger.error('Failed to apply retention policies', error as Error)
       return {
         policiesApplied: 0,
         recordsArchived: 0,
@@ -654,20 +655,20 @@ export class DataArchivalManager {
   private async archiveRecord(record: any, location?: string): Promise<number> {
     // Mock implementation
     // In a real implementation, this would archive the record
-    console.log(`Archiving record: ${record.id} to ${location}`)
+    logger.info('Archiving record: ${record.id} to ${location}')
     return 256 // Return mock size in bytes
   }
 
   private async flagRecord(record: any, flag?: string): Promise<void> {
     // Mock implementation
     // In a real implementation, this would flag the record
-    console.log(`Flagging record: ${record.id} with flag: ${flag}`)
+    logger.info('Flagging record: ${record.id} with flag: ${flag}')
   }
 
   private async deleteRecord(record: any): Promise<void> {
     // Mock implementation
     // In a real implementation, this would delete the record
-    console.log(`Deleting record: ${record.id}`)
+    logger.info('Deleting record: ${record.id}')
   }
 
   private async calculateRecordSize(record: any): Promise<number> {

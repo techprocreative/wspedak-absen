@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { serverDbManager } from '@/lib/server-db'
 import { hasAnyServerRole } from '@/lib/server-auth'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Helper function to check admin authentication
 async function checkAdminAuth(request: NextRequest) {
   if (!hasAnyServerRole(['admin', 'hr', 'manager'])) {
@@ -61,7 +62,7 @@ export async function GET(
       data: assignmentWithDetails,
     })
   } catch (error) {
-    console.error('Error fetching schedule assignment:', error)
+    logger.error('Error fetching schedule assignment', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch schedule assignment' },
       { status: 500 }
@@ -109,7 +110,7 @@ export async function PUT(
       message: 'Schedule assignment updated successfully',
     })
   } catch (error) {
-    console.error('Error updating schedule assignment:', error)
+    logger.error('Error updating schedule assignment', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to update schedule assignment' },
       { status: 500 }
@@ -144,7 +145,7 @@ export async function DELETE(
       message: 'Schedule assignment deleted successfully',
     })
   } catch (error) {
-    console.error('Error deleting schedule assignment:', error)
+    logger.error('Error deleting schedule assignment', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to delete schedule assignment' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hasAnyServerRole } from '@/lib/server-auth'
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   enrollMFA, 
   verifyMFA, 
   isMFAEnabledForUser, 
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error getting MFA status:', error)
+    logger.error('Error getting MFA status', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to get MFA status' },
       { status: 500 }
@@ -313,7 +314,7 @@ export async function POST(request: NextRequest) {
         )
     }
   } catch (error) {
-    console.error('Error in MFA API:', error)
+    logger.error('Error in MFA API', error as Error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -369,7 +370,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Trusted device removed successfully'
     })
   } catch (error) {
-    console.error('Error removing trusted device:', error)
+    logger.error('Error removing trusted device', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to remove trusted device' },
       { status: 500 }

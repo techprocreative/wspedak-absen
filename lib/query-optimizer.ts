@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Query Optimizer
  * Provides query optimization for large datasets
@@ -86,7 +88,7 @@ export class QueryOptimizer {
     // Start cache cleanup interval
     this.startCacheCleanup();
     
-    console.log('Query optimizer initialized');
+    logger.info('Query optimizer initialized');
   }
 
   /**
@@ -105,7 +107,7 @@ export class QueryOptimizer {
     // Clear cache
     this.queryCache.clear();
     
-    console.log('Query optimizer cleaned up');
+    logger.info('Query optimizer cleaned up');
   }
 
   /**
@@ -275,7 +277,7 @@ export class QueryOptimizer {
       
       // Check if query took too long
       if (this.options.enablePerformanceOptimization && queryTime > this.options.maxQueryTime!) {
-        console.warn(`Query took too long: ${queryTime}ms`);
+        logger.warn('Query took too long: ${queryTime}ms');
       }
       
       // Determine if there are more results
@@ -290,11 +292,11 @@ export class QueryOptimizer {
       };
     } catch (error) {
       if (error instanceof Error && error.message.includes('timed out')) {
-        console.error('Query timed out:', error);
+        logger.error('Query timed out', error as Error);
         throw error;
       }
       
-      console.error('Query failed:', error);
+      logger.error('Query failed', error as Error);
       throw error;
     } finally {
       // Clean up
@@ -329,7 +331,7 @@ export class QueryOptimizer {
         this.queryCache.delete(entries[i][0]);
       }
       
-      console.log(`Cleaned up ${toRemove} cache entries to free memory`);
+      logger.info('Cleaned up ${toRemove} cache entries to free memory');
     }
   }
 

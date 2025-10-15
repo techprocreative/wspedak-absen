@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverDbManager } from '@/lib/server-db'
 import FaceMatcher from '@/lib/face-matching'
+import { logger, logApiRequest, logApiError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     const descriptorArray = new Float32Array(descriptor)
     
     // Match face
-    console.log('Attempting to match face...')
+    logger.debug('Attempting to match face')
     const match = await FaceMatcher.matchFace(descriptorArray)
     
     if (!match) {
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error: any) {
-    console.error('Face check-in error:', error)
+    logApiError('POST', '/api/attendance/face-checkin', error)
     return NextResponse.json(
       { 
         success: false, 

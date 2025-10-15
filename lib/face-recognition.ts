@@ -11,6 +11,7 @@ import { imageProcessor, ImageProcessingOptions } from './image-processor';
 import { qualityThresholdsManager, QualityThresholdsOptions, QualityMetrics } from './quality-thresholds';
 import { memoryMonitor, MemoryMonitorOptions } from './memory-monitor';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export interface FaceEmbedding {
   id: string;
   userId: string;
@@ -186,9 +187,9 @@ export class FaceRecognition {
       
       this.isModelLoaded = true;
       
-      console.log('Face recognition model loaded with hardware optimizations');
+      logger.info('Face recognition model loaded with hardware optimizations');
     } catch (error) {
-      console.error('Failed to initialize face recognition model:', error);
+      logger.error('Failed to initialize face recognition model', error as Error);
       throw new Error('Face recognition model initialization failed');
     }
   }
@@ -213,9 +214,9 @@ export class FaceRecognition {
       await faceWorkerManager.initialize(workerConfig);
       this.isWorkerInitialized = true;
       
-      console.log('Face recognition worker initialized');
+      logger.info('Face recognition worker initialized');
     } catch (error) {
-      console.error('Failed to initialize face recognition worker:', error);
+      logger.error('Failed to initialize face recognition worker', error as Error);
       throw error;
     }
   }
@@ -264,10 +265,10 @@ export class FaceRecognition {
       ) {
         this.model = result.model;
         this.currentModelQuality = quality;
-        console.log(`Upgraded to ${quality} face recognition model`);
+        logger.info('Upgraded to ${quality} face recognition model');
       }
     } catch (error) {
-      console.error(`Failed to load ${quality} model in background:`, error);
+      logger.error('Failed to load ${quality} model in background', error as Error);
     }
   }
 
@@ -306,9 +307,9 @@ export class FaceRecognition {
         );
         this.model = result.model;
         this.currentModelQuality = targetQuality;
-        console.log(`Auto-upgraded to ${targetQuality} model based on performance`);
+        logger.info('Auto-upgraded to ${targetQuality} model based on performance');
       } catch (error) {
-        console.error(`Failed to auto-upgrade to ${targetQuality} model:`, error);
+        logger.error('Failed to auto-upgrade to ${targetQuality} model', error as Error);
       }
     }
   }
@@ -335,9 +336,9 @@ export class FaceRecognition {
         );
         this.model = result.model;
         this.currentModelQuality = targetQuality;
-        console.log(`Downgraded to ${targetQuality} model due to memory constraints`);
+        logger.info('Downgraded to ${targetQuality} model due to memory constraints');
       } catch (error) {
-        console.error(`Failed to downgrade to ${targetQuality} model:`, error);
+        logger.error('Failed to downgrade to ${targetQuality} model', error as Error);
       }
     }
   }
@@ -354,7 +355,7 @@ export class FaceRecognition {
     // Fallback to standard loading
     return new Promise((resolve) => {
       setTimeout(() => {
-        console.log('Face recognition model loaded');
+        logger.info('Face recognition model loaded');
         resolve();
       }, 1000);
     });
@@ -411,7 +412,7 @@ export class FaceRecognition {
       const qualityResult = qualityThresholdsManager.evaluateQuality(metrics);
       
       if (!qualityResult.shouldProcess) {
-        console.log(`Face detection skipped: ${qualityResult.reason}`);
+        logger.info('Face detection skipped: ${qualityResult.reason}');
         return [];
       }
     }
@@ -439,7 +440,7 @@ export class FaceRecognition {
       
       return result.faces;
     } catch (error) {
-      console.error('Worker face detection failed, falling back to main thread:', error);
+      logger.error('Worker face detection failed, falling back to main thread', error as Error);
       
       // Fallback to main thread
       if (this.options.enableCPUOptimization) {
@@ -491,7 +492,7 @@ export class FaceRecognition {
         imageQuality,
       };
     } catch (error) {
-      console.error('Face detection failed:', error);
+      logger.error('Face detection failed', error as Error);
       throw new Error('Face detection failed');
     }
   }
@@ -541,7 +542,7 @@ export class FaceRecognition {
       const result = await faceWorkerManager.generateEmbedding(imageElement);
       return result.embedding;
     } catch (error) {
-      console.error('Worker embedding generation failed, falling back to main thread:', error);
+      logger.error('Worker embedding generation failed, falling back to main thread', error as Error);
       
       // Fallback to main thread
       const faceDetectionResult = await this.detectFacesInternal(imageElement);
@@ -595,7 +596,7 @@ export class FaceRecognition {
       
       return embedding;
     } catch (error) {
-      console.error('Embedding generation failed:', error);
+      logger.error('Embedding generation failed', error as Error);
       throw new Error('Embedding generation failed');
     }
   }
@@ -642,7 +643,7 @@ export class FaceRecognition {
       const result = await faceWorkerManager.matchFaces(embedding, knownFaces);
       return result.matches;
     } catch (error) {
-      console.error('Worker face matching failed, falling back to main thread:', error);
+      logger.error('Worker face matching failed, falling back to main thread', error as Error);
       
       // Fallback to main thread
       if (this.options.enableCPUOptimization) {
@@ -702,7 +703,7 @@ export class FaceRecognition {
         .filter(match => match.confidence >= this.options.recognitionThreshold!)
         .sort((a, b) => b.confidence - a.confidence);
     } catch (error) {
-      console.error('Face matching failed:', error);
+      logger.error('Face matching failed', error as Error);
       throw new Error('Face matching failed');
     }
   }
@@ -753,7 +754,7 @@ export class FaceRecognition {
         this.isProcessing = false;
       }
     } catch (error) {
-      console.error('Error processing operation queue:', error);
+      logger.error('Error processing operation queue', error as Error);
       this.isProcessing = false;
     }
   }
@@ -926,7 +927,7 @@ export class FaceRecognition {
         await faceWorkerManager.cleanup();
         this.isWorkerInitialized = false;
       } catch (error) {
-        console.error('Failed to cleanup face recognition worker:', error);
+        logger.error('Failed to cleanup face recognition worker', error as Error);
       }
     }
     
@@ -999,7 +1000,7 @@ export class FaceRecognition {
       try {
         return await faceWorkerManager.getPerformanceMetrics();
       } catch (error) {
-        console.error('Failed to get worker performance metrics:', error);
+        logger.error('Failed to get worker performance metrics', error as Error);
         return null;
       }
     }
@@ -1029,7 +1030,7 @@ export class FaceRecognition {
         // Update worker config in options
         this.options.workerConfig = { ...this.options.workerConfig, ...config };
       } catch (error) {
-        console.error('Failed to update worker config:', error);
+        logger.error('Failed to update worker config', error as Error);
         throw error;
       }
     }
@@ -1054,9 +1055,9 @@ export class FaceRecognition {
       );
       this.model = result.model;
       this.currentModelQuality = targetQuality;
-      console.log(`Manually upgraded to ${targetQuality} model`);
+      logger.info('Manually upgraded to ${targetQuality} model');
     } catch (error) {
-      console.error(`Failed to upgrade to ${targetQuality} model:`, error);
+      logger.error('Failed to upgrade to ${targetQuality} model', error as Error);
       throw error;
     }
   }

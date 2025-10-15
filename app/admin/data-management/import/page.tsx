@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import {
   Upload,
   FileText,
@@ -189,7 +190,7 @@ export default function DataImportPage() {
       setTemplates(importTemplates)
       setImportHistory(mockImportHistory)
     } catch (error) {
-      console.error("Error fetching import data:", error)
+      logger.error('Error fetching import data', error as Error)
     } finally {
       setLoading(false)
     }
@@ -276,7 +277,7 @@ export default function DataImportPage() {
         setActiveTab("preview")
       }, 2000)
     } catch (error) {
-      console.error("Error uploading file:", error)
+      logger.error('Error uploading file', error as Error)
       setIsUploading(false)
     }
   }

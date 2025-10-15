@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Metrics Collection System
  * Provides comprehensive metrics collection for the application
@@ -198,7 +200,7 @@ export class MetricsCollector {
         this.aggregatedMetrics = new Map(Object.entries(data.aggregatedMetrics || {}));
       }
     } catch (error) {
-      console.error('Error loading persisted metrics:', error);
+      logger.error('Error loading persisted metrics', error as Error);
     }
   }
 
@@ -223,7 +225,7 @@ export class MetricsCollector {
 
       localStorage.setItem(this.options.persistenceKey!, JSON.stringify(data));
     } catch (error) {
-      console.error('Error persisting metrics:', error);
+      logger.error('Error persisting metrics', error as Error);
     }
   }
 
@@ -349,7 +351,7 @@ export class MetricsCollector {
           unit: '%',
         });
       }).catch(error => {
-        console.error('Error getting storage estimate:', error);
+        logger.error('Error getting storage estimate', error as Error);
       });
     }
 
@@ -470,7 +472,7 @@ export class MetricsCollector {
   ): void {
     const definition = this.metricDefinitions.get(name);
     if (!definition) {
-      console.warn(`Metric ${name} is not defined`);
+      logger.warn('Metric ${name} is not defined');
       return;
     }
 
@@ -544,7 +546,7 @@ export class MetricsCollector {
   ): void {
     const definition = this.metricDefinitions.get(name);
     if (!definition || definition.type !== 'counter') {
-      console.warn(`Metric ${name} is not a counter`);
+      logger.warn('Metric ${name} is not a counter');
       return;
     }
 
@@ -574,7 +576,7 @@ export class MetricsCollector {
   ): void {
     const definition = this.metricDefinitions.get(name);
     if (!definition || definition.type !== 'gauge') {
-      console.warn(`Metric ${name} is not a gauge`);
+      logger.warn('Metric ${name} is not a gauge');
       return;
     }
 
@@ -591,7 +593,7 @@ export class MetricsCollector {
   ): void {
     const definition = this.metricDefinitions.get(name);
     if (!definition || (definition.type !== 'histogram' && definition.type !== 'timer')) {
-      console.warn(`Metric ${name} is not a histogram or timer`);
+      logger.warn('Metric ${name} is not a histogram or timer');
       return;
     }
 

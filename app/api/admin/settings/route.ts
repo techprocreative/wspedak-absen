@@ -3,6 +3,7 @@ import { serverDbManager } from '@/lib/server-db'
 import { hasAnyServerRole } from '@/lib/server-auth'
 import { z } from 'zod'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       data: settings,
     })
   } catch (error) {
-    console.error('Error fetching settings:', error)
+    logger.error('Error fetching settings', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch settings' },
       { status: 500 }
@@ -79,7 +80,7 @@ export async function PUT(request: NextRequest) {
       message: 'Settings updated successfully',
     })
   } catch (error) {
-    console.error('Error updating settings:', error)
+    logger.error('Error updating settings', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to update settings' },
       { status: 500 }

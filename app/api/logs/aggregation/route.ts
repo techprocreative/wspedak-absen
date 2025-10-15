@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logAggregator } from '@/lib/log-aggregator';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // GET /api/logs/aggregation - Get log aggregations or analyses
 export async function GET(request: NextRequest) {
   try {
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Log aggregation API error:', error);
+    logger.error('Log aggregation API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Log aggregation API error:', error);
+    logger.error('Log aggregation API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -180,7 +181,7 @@ export async function DELETE(request: NextRequest) {
       message,
     });
   } catch (error) {
-    console.error('Log aggregation API error:', error);
+    logger.error('Log aggregation API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

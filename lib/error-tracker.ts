@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Error Tracking and Alerting System
  * Provides comprehensive error tracking, grouping, and alerting
@@ -266,7 +268,7 @@ export class ErrorTracker {
         }
       }
     } catch (error) {
-      console.error('Error loading persisted errors:', error);
+      logger.error('Error loading persisted errors', error as Error);
     }
   }
 
@@ -288,7 +290,7 @@ export class ErrorTracker {
       
       localStorage.setItem('error_tracker_data', JSON.stringify(data));
     } catch (error) {
-      console.error('Error persisting errors:', error);
+      logger.error('Error persisting errors', error as Error);
     }
   }
 
@@ -755,18 +757,18 @@ export class ErrorTracker {
       // Send notification based on channel type
       switch (channel.type) {
         case 'console':
-          console.error(`[ALERT] ${alert.message}`, alert);
+          logger.error('[ALERT] ${alert.message}', alert as Error);
           break;
         case 'webhook':
           this.sendWebhookNotification(alert, channel.config);
           break;
         case 'email':
           // This would require an email service implementation
-          console.log(`Email notification would be sent: ${alert.message}`);
+          logger.info('Email notification would be sent: ${alert.message}');
           break;
         case 'slack':
           // This would require a Slack webhook implementation
-          console.log(`Slack notification would be sent: ${alert.message}`);
+          logger.info('Slack notification would be sent: ${alert.message}');
           break;
       }
     }
@@ -821,7 +823,7 @@ export class ErrorTracker {
       },
       body: JSON.stringify(payload),
     }).catch(error => {
-      console.error('Error sending webhook notification:', error);
+      logger.error('Error sending webhook notification', error as Error);
     });
   }
 
@@ -833,7 +835,7 @@ export class ErrorTracker {
       try {
         callback(alert);
       } catch (error) {
-        console.error('Error in alert notification callback:', error);
+        logger.error('Error in alert notification callback', error as Error);
       }
     });
   }

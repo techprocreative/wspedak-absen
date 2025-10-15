@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { businessMetricsCollector } from '@/lib/business-metrics';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // GET /api/business-metrics - Get business metrics, definitions, or goals
 export async function GET(request: NextRequest) {
   try {
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Business metrics API error:', error);
+    logger.error('Business metrics API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -218,7 +219,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Business metrics API error:', error);
+    logger.error('Business metrics API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -235,7 +236,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Business metrics cleared',
     });
   } catch (error) {
-    console.error('Business metrics API error:', error);
+    logger.error('Business metrics API error', error as Error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

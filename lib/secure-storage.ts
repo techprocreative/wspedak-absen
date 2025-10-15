@@ -1,5 +1,6 @@
 import CryptoJS from 'crypto-js'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Encryption configuration
 const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'default-encryption-key-change-in-production'
 const ALGORITHM = 'AES'
@@ -61,7 +62,7 @@ export class SecureStorage {
       
       return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(JSON.stringify(encryptedData)))
     } catch (error) {
-      console.error('Encryption error:', error)
+      logger.error('Encryption error', error as Error)
       throw new Error('Failed to encrypt data')
     }
   }
@@ -84,7 +85,7 @@ export class SecureStorage {
       const decryptedString = decrypted.toString(CryptoJS.enc.Utf8)
       return JSON.parse(decryptedString)
     } catch (error) {
-      console.error('Decryption error:', error)
+      logger.error('Decryption error', error as Error)
       return null
     }
   }
@@ -97,7 +98,7 @@ export class SecureStorage {
       const encrypted = this.encrypt(data, customKey)
       localStorage.setItem(key, encrypted)
     } catch (error) {
-      console.error('Secure storage set error:', error)
+      logger.error('Secure storage set error', error as Error)
       throw new Error('Failed to store data securely')
     }
   }
@@ -112,7 +113,7 @@ export class SecureStorage {
       
       return this.decrypt<T>(encryptedData, customKey)
     } catch (error) {
-      console.error('Secure storage get error:', error)
+      logger.error('Secure storage get error', error as Error)
       return null
     }
   }

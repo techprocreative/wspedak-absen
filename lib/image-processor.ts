@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Image Processing Optimizer
  * Provides optimized image processing pipeline for face recognition
@@ -491,7 +493,7 @@ export class ImageProcessor {
         this.isProcessing = false;
       }
     } catch (error) {
-      console.error('Error processing image queue:', error);
+      logger.error('Error processing image queue', error as Error);
       this.isProcessing = false;
     }
   }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ZodSchema, ZodError } from 'zod'
 import { errorResponseSchema } from './validation-schemas'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Validation middleware factory
 export function createValidationMiddleware<T>(schema: ZodSchema<T>, source: 'body' | 'query' | 'params' = 'body') {
   return async (request: NextRequest, context?: { params?: any }) => {
@@ -49,7 +50,7 @@ export function createValidationMiddleware<T>(schema: ZodSchema<T>, source: 'bod
       }
 
       // Handle other errors (e.g., JSON parsing errors)
-      console.error('Validation middleware error:', error)
+      logger.error('Validation middleware error', error as Error)
       return NextResponse.json(
         {
           success: false,
@@ -150,7 +151,7 @@ export function createSanitizationMiddleware(fields: string[] = []) {
 
       return { success: true, request: sanitizedRequest, data: sanitizedBody }
     } catch (error) {
-      console.error('Sanitization middleware error:', error)
+      logger.error('Sanitization middleware error', error as Error)
       return NextResponse.json(
         {
           success: false,

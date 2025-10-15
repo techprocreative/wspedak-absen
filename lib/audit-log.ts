@@ -1,6 +1,7 @@
 import { secureStorage } from './secure-storage'
 import { UserRole } from './auth'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Audit log configuration
 const AUDIT_LOG_KEY = 'audit_logs'
 const MAX_LOG_ENTRIES = 10000
@@ -126,7 +127,7 @@ export class AuditLogManager {
     try {
       return secureStorage.getItem<AuditLogEntry[]>(AUDIT_LOG_KEY) || []
     } catch (error) {
-      console.error('Error loading audit logs:', error)
+      logger.error('Error loading audit logs', error as Error)
       return []
     }
   }
@@ -136,7 +137,7 @@ export class AuditLogManager {
     try {
       secureStorage.setItem(AUDIT_LOG_KEY, this.logs)
     } catch (error) {
-      console.error('Error saving audit logs:', error)
+      logger.error('Error saving audit logs', error as Error)
     }
   }
 
@@ -164,7 +165,7 @@ export class AuditLogManager {
 
     // Log critical events to console for immediate visibility
     if (entry.severity === 'critical') {
-      console.error('CRITICAL AUDIT EVENT:', logEntry)
+      logger.error('CRITICAL AUDIT EVENT', logEntry as Error)
     }
   }
 

@@ -1,6 +1,7 @@
 
 import { z } from 'zod'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Define interfaces for report builder
 export interface ReportConfig {
   id: string
@@ -518,7 +519,7 @@ export class ReportBuilder {
   static async delete(id: string): Promise<boolean> {
     // Mock implementation
     // In a real implementation, this would delete from database
-    console.log(`Deleting report: ${id}`)
+    logger.info('Deleting report: ${id}')
     return true
   }
 

@@ -8,6 +8,7 @@ import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { serverDbManager } from './server-db'
 
+import { logger } from '@/lib/logger'
 export interface ReportConfig {
   type: 'attendance' | 'performance' | 'employee' | 'department' | 'custom'
   dataSource: string
@@ -32,7 +33,7 @@ export class ReportGenerator {
    * Generate report based on configuration
    */
   async generateReport(config: ReportConfig): Promise<Buffer | string> {
-    console.log('Generating report:', config.type, config.format)
+    logger.info('Generating report', { type: config.type, format: config.format })
     
     // Fetch data based on config
     const data = await this.fetchReportData(config)

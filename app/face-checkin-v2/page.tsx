@@ -5,7 +5,8 @@ import * as faceapi from 'face-api.js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   Camera, 
   Check, 
   X, 
@@ -102,14 +103,14 @@ export default function FaceCheckinV2Page() {
   useEffect(() => {
     async function loadModels() {
       try {
-        console.log('Loading face-api models...')
+        logger.info('Loading face-api models...')
         await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
         await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
         await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
         setModelsLoaded(true)
-        console.log('✅ Models loaded successfully')
+        logger.info('✅ Models loaded successfully')
       } catch (err) {
-        console.error('❌ Failed to load models:', err)
+        logger.error('❌ Failed to load models', err as Error)
       }
     }
     loadModels()
@@ -121,7 +122,7 @@ export default function FaceCheckinV2Page() {
       if (!modelsLoaded) return
 
       try {
-        console.log('Starting camera...')
+        logger.info('Starting camera...')
         const mediaStream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             width: 640, 
@@ -133,9 +134,9 @@ export default function FaceCheckinV2Page() {
           videoRef.current.srcObject = mediaStream
         }
         setStream(mediaStream)
-        console.log('✅ Camera started')
+        logger.info('✅ Camera started')
       } catch (err) {
-        console.error('❌ Failed to access camera:', err)
+        logger.error('❌ Failed to access camera', err as Error)
       }
     }
 
@@ -162,7 +163,7 @@ export default function FaceCheckinV2Page() {
           })
         },
         (err) => {
-          console.warn('Location not available:', err)
+          logger.warn('Location not available', { value: err })
         }
       )
     }
@@ -201,7 +202,7 @@ export default function FaceCheckinV2Page() {
           }
         }
       } catch (err) {
-        console.error('Detection error:', err)
+        logger.error('Detection error', err as Error)
       }
     }
 
@@ -244,7 +245,7 @@ export default function FaceCheckinV2Page() {
         }
       }
     } catch (err) {
-      console.error('Failed to identify user:', err)
+      logger.error('Failed to identify user', err as Error)
     } finally {
       setDetecting(false)
     }

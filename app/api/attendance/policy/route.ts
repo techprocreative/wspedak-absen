@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export async function GET() {
   try {
     const { data, error } = await supabase
@@ -31,7 +32,7 @@ export async function GET() {
     
     return NextResponse.json({ data });
   } catch (error) {
-    console.error('Error fetching attendance policy:', error);
+    logger.error('Error fetching attendance policy', error as Error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -87,7 +88,7 @@ export async function PUT(request: NextRequest) {
     
     return NextResponse.json({ data: result });
   } catch (error) {
-    console.error('Error updating attendance policy:', error);
+    logger.error('Error updating attendance policy', error as Error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -8,6 +8,7 @@ import { businessIntelligence } from '@/lib/analytics/business-intelligence';
 import { predictiveAnalytics } from '@/lib/analytics/predictive-analytics';
 import { systemMonitor } from '@/lib/monitoring/system-monitor';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Chart interfaces
 export interface ChartConfig {
   id: string;
@@ -1100,7 +1101,7 @@ class ChartBuilder {
 
     // Mock implementation - in real system, this would use a charting library
     // to generate an actual image
-    console.log(`Generating ${options.format} image for chart ${chartId}`);
+    logger.info('Generating ${options.format} image for chart ${chartId}');
     
     // Return a placeholder URL
     return `data:image/${options.format};base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
@@ -1112,7 +1113,7 @@ class ChartBuilder {
     
     // This would need to be implemented based on how chart metadata is stored
     // For now, just log the action
-    console.log(`Cleaning up charts older than ${olderThanDays} days`);
+    logger.info('Cleaning up charts older than ${olderThanDays} days');
   }
 }
 

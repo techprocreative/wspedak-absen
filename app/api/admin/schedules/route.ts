@@ -3,6 +3,7 @@ import { serverDbManager } from '@/lib/server-db'
 import { hasAnyServerRole } from '@/lib/server-auth'
 import { z } from 'zod'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Helper function to check admin authentication
 async function checkAdminAuth(request: NextRequest) {
   if (!hasAnyServerRole(['admin', 'hr', 'manager'])) {
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
       data: schedules,
     })
   } catch (error) {
-    console.error('Error fetching schedules:', error)
+    logger.error('Error fetching schedules', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch schedules' },
       { status: 500 }
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       message: 'Schedule created successfully',
     }, { status: 201 })
   } catch (error) {
-    console.error('Error creating schedule:', error)
+    logger.error('Error creating schedule', error as Error)
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(

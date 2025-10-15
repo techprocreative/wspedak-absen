@@ -4,6 +4,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import type { 
   ServerUser, 
   ServerAttendanceRecord, 
@@ -79,7 +80,7 @@ export class SupabaseDbManager {
     const { data, error } = await query
     
     if (error) {
-      console.error('Error fetching users:', error)
+      logger.error('Error fetching users', error as Error)
       throw new Error(`Failed to fetch users: ${error.message}`)
     }
     
@@ -95,7 +96,7 @@ export class SupabaseDbManager {
     
     if (error) {
       if (error.code === 'PGRST116') return null // Not found
-      console.error('Error fetching user:', error)
+      logger.error('Error fetching user', error as Error)
       return null
     }
     
@@ -111,7 +112,7 @@ export class SupabaseDbManager {
       .maybeSingle()
     
     if (error) {
-      console.error('Error fetching user by email:', error)
+      logger.error('Error fetching user by email', error as Error)
       return null
     }
     
@@ -130,7 +131,7 @@ export class SupabaseDbManager {
       .single()
     
     if (error) {
-      console.error('Error saving user:', error)
+      logger.error('Error saving user', error as Error)
       throw new Error(`Failed to save user: ${error.message}`)
     }
     
@@ -145,7 +146,7 @@ export class SupabaseDbManager {
       .eq('id', id)
     
     if (error) {
-      console.error('Error deleting user:', error)
+      logger.error('Error deleting user', error as Error)
       return false
     }
     
@@ -202,7 +203,7 @@ export class SupabaseDbManager {
     const { data, error } = await query
     
     if (error) {
-      console.error('Error fetching attendance records:', error)
+      logger.error('Error fetching attendance records', error as Error)
       throw new Error(`Failed to fetch attendance records: ${error.message}`)
     }
     
@@ -218,7 +219,7 @@ export class SupabaseDbManager {
     
     if (error) {
       if (error.code === 'PGRST116') return null
-      console.error('Error fetching attendance record:', error)
+      logger.error('Error fetching attendance record', error as Error)
       return null
     }
     
@@ -235,7 +236,7 @@ export class SupabaseDbManager {
       .single()
     
     if (error) {
-      console.error('Error saving attendance record:', error)
+      logger.error('Error saving attendance record', error as Error)
       throw new Error(`Failed to save attendance record: ${error.message}`)
     }
     
@@ -249,7 +250,7 @@ export class SupabaseDbManager {
       .eq('id', id)
     
     if (error) {
-      console.error('Error deleting attendance record:', error)
+      logger.error('Error deleting attendance record', error as Error)
       return false
     }
     
@@ -295,7 +296,7 @@ export class SupabaseDbManager {
     const { data, error } = await query
     
     if (error) {
-      console.error('Error fetching schedules:', error)
+      logger.error('Error fetching schedules', error as Error)
       throw new Error(`Failed to fetch schedules: ${error.message}`)
     }
     
@@ -311,7 +312,7 @@ export class SupabaseDbManager {
     
     if (error) {
       if (error.code === 'PGRST116') return null
-      console.error('Error fetching schedule:', error)
+      logger.error('Error fetching schedule', error as Error)
       return null
     }
     
@@ -328,7 +329,7 @@ export class SupabaseDbManager {
       .single()
     
     if (error) {
-      console.error('Error saving schedule:', error)
+      logger.error('Error saving schedule', error as Error)
       throw new Error(`Failed to save schedule: ${error.message}`)
     }
     
@@ -342,7 +343,7 @@ export class SupabaseDbManager {
       .eq('id', id)
     
     if (error) {
-      console.error('Error deleting schedule:', error)
+      logger.error('Error deleting schedule', error as Error)
       return false
     }
     
@@ -362,7 +363,7 @@ export class SupabaseDbManager {
         .maybeSingle()
       
       if (error) {
-        console.error('Error fetching settings:', error)
+        logger.error('Error fetching settings', error as Error)
         return null
       }
       
@@ -375,7 +376,7 @@ export class SupabaseDbManager {
       .select('*')
     
     if (error) {
-      console.error('Error fetching settings:', error)
+      logger.error('Error fetching settings', error as Error)
       return {}
     }
     
@@ -397,7 +398,7 @@ export class SupabaseDbManager {
       }, { onConflict: 'section' })
     
     if (error) {
-      console.error('Error saving settings:', error)
+      logger.error('Error saving settings', error as Error)
       return false
     }
     
@@ -416,7 +417,7 @@ export class SupabaseDbManager {
       .eq('is_active', true)
     
     if (error) {
-      console.error('Error fetching face embeddings:', error)
+      logger.error('Error fetching face embeddings', error as Error)
       return []
     }
     
@@ -430,7 +431,7 @@ export class SupabaseDbManager {
       .eq('is_active', true)
     
     if (error) {
-      console.error('Error fetching all face embeddings:', error)
+      logger.error('Error fetching all face embeddings', error as Error)
       return []
     }
     
@@ -456,7 +457,7 @@ export class SupabaseDbManager {
       .single()
     
     if (error) {
-      console.error('Error saving face embedding:', error)
+      logger.error('Error saving face embedding', error as Error)
       throw new Error(`Failed to save face embedding: ${error.message}`)
     }
     
@@ -471,7 +472,7 @@ export class SupabaseDbManager {
       .eq('id', id)
     
     if (error) {
-      console.error('Error deleting face embedding:', error)
+      logger.error('Error deleting face embedding', error as Error)
       return false
     }
     
@@ -505,7 +506,7 @@ export class SupabaseDbManager {
       })
     
     if (error) {
-      console.error('Error creating audit log:', error)
+      logger.error('Error creating audit log', error as Error)
     }
   }
   
@@ -555,7 +556,7 @@ export class SupabaseDbManager {
     const { data, error } = await query
     
     if (error) {
-      console.error('Error fetching audit logs:', error)
+      logger.error('Error fetching audit logs', error as Error)
       return []
     }
     
@@ -581,7 +582,7 @@ export class SupabaseDbManager {
     const { data, error } = await query
     
     if (error) {
-      console.error('Error fetching notifications:', error)
+      logger.error('Error fetching notifications', error as Error)
       return []
     }
     
@@ -609,7 +610,7 @@ export class SupabaseDbManager {
       })
     
     if (error) {
-      console.error('Error creating notification:', error)
+      logger.error('Error creating notification', error as Error)
     }
   }
   
@@ -620,7 +621,7 @@ export class SupabaseDbManager {
       .eq('id', id)
     
     if (error) {
-      console.error('Error marking notification as read:', error)
+      logger.error('Error marking notification as read', error as Error)
       return false
     }
     
@@ -776,7 +777,7 @@ export class SupabaseDbManager {
       .order('created_at', { ascending: false })
     
     if (error) {
-      console.error('Error fetching face embeddings by user:', error)
+      logger.error('Error fetching face embeddings by user', error as Error)
       throw new Error(`Failed to fetch face embeddings: ${error.message}`)
     }
     
@@ -828,7 +829,7 @@ export class SupabaseDbManager {
     const { data, error } = await query
     
     if (error) {
-      console.error('Error fetching schedule assignments:', error)
+      logger.error('Error fetching schedule assignments', error as Error)
       throw new Error(`Failed to fetch schedule assignments: ${error.message}`)
     }
     
@@ -844,7 +845,7 @@ export class SupabaseDbManager {
     
     if (error) {
       if (error.code === 'PGRST116') return null
-      console.error('Error fetching schedule assignment:', error)
+      logger.error('Error fetching schedule assignment', error as Error)
       return null
     }
     
@@ -861,7 +862,7 @@ export class SupabaseDbManager {
       .single()
     
     if (error) {
-      console.error('Error saving schedule assignment:', error)
+      logger.error('Error saving schedule assignment', error as Error)
       throw new Error(`Failed to save schedule assignment: ${error.message}`)
     }
     
@@ -875,7 +876,7 @@ export class SupabaseDbManager {
       .eq('id', id)
     
     if (error) {
-      console.error('Error deleting schedule assignment:', error)
+      logger.error('Error deleting schedule assignment', error as Error)
       return false
     }
     

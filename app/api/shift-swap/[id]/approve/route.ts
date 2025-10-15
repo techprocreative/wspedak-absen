@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyJWT } from "@/lib/auth";
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 import { createClient } from "@supabase/supabase-js";
 
@@ -197,7 +198,7 @@ export async function POST(
       { status: 403 }
     );
   } catch (error: any) {
-    console.error("Error approving shift swap:", error);
+    logger.error('Error approving shift swap', error as Error);
     return NextResponse.json(
       { error: error.message || "Failed to approve shift swap" },
       { status: 500 }
@@ -211,7 +212,7 @@ async function executeShiftSwap(supabase: any, swap: any) {
   // This would update schedule_assignments table or create new assignments
   
   // For now, just log that it's executed
-  console.log("Executing shift swap:", swap.id);
+  logger.info('Executing shift swap', { swapId: swap.id });
   
   // In production, you would:
   // 1. Update schedule_assignments for both requestor and target

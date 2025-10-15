@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAdminAuth } from '@/lib/api-auth-middleware'
 import { reportGenerator, ReportConfig } from '@/lib/report-generator'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 export const POST = withAdminAuth(async (request) => {
@@ -42,7 +43,7 @@ export const POST = withAdminAuth(async (request) => {
     }
     
     // Generate report
-    console.log('Generating report with config:', config)
+    logger.info('Generating report with config', { config })
     const report = await reportGenerator.generateReport(config)
     
     // Set appropriate headers based on format
@@ -87,7 +88,7 @@ export const POST = withAdminAuth(async (request) => {
       headers
     })
   } catch (error: any) {
-    console.error('Error generating report:', error)
+    logger.error('Error generating report', error as Error)
     return NextResponse.json(
       { 
         success: false, 

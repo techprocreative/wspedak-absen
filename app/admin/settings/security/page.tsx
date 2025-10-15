@@ -13,7 +13,8 @@ import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   Table, 
   TableBody, 
   TableCell, 
@@ -148,7 +149,7 @@ export default function SecuritySettingsPage() {
 
       // Fetch other settings would go here
     } catch (error) {
-      console.error('Error fetching security settings:', error)
+      logger.error('Error fetching security settings', error as Error)
     } finally {
       setIsLoading(false)
     }
@@ -189,7 +190,7 @@ export default function SecuritySettingsPage() {
         setTimeout(() => setSaveMessage(''), 3000)
       }
     } catch (error) {
-      console.error('Error saving security settings:', error)
+      logger.error('Error saving security settings', error as Error)
       setSaveMessage('Failed to save settings')
       setTimeout(() => setSaveMessage(''), 3000)
     } finally {
@@ -207,7 +208,7 @@ export default function SecuritySettingsPage() {
         setShowPasswordGenerator(true)
       }
     } catch (error) {
-      console.error('Error generating password:', error)
+      logger.error('Error generating password', error as Error)
     }
   }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyJWT } from "@/lib/auth";
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 import { createClient } from "@supabase/supabase-js";
 
@@ -96,7 +97,7 @@ export async function POST(
       message: "Swap request cancelled successfully",
     });
   } catch (error: any) {
-    console.error("Error cancelling shift swap:", error);
+    logger.error('Error cancelling shift swap', error as Error);
     return NextResponse.json(
       { error: error.message || "Failed to cancel shift swap" },
       { status: 500 }

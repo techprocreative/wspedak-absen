@@ -3,6 +3,7 @@ import { serverDbManager } from '@/lib/server-db'
 import { hasAnyServerRole } from '@/lib/server-auth'
 import { z } from 'zod'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Helper function to check admin authentication
 async function checkAdminAuth(request: NextRequest) {
   if (!hasAnyServerRole(['admin', 'hr', 'manager'])) {
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     const assignments = await serverDbManager.getScheduleAssignments({
       scheduleId: query.scheduleId,
       userId: query.userId,
-      status: query.status,
+      // status: query.status, // TODO: Add status filter to server-db interface
       startDate: query.startDate,
       endDate: query.endDate,
       limit: query.limit,
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
     const allAssignments = await serverDbManager.getScheduleAssignments({
       scheduleId: query.scheduleId,
       userId: query.userId,
-      status: query.status,
+      // status: query.status, // TODO: Add status filter to server-db interface
       startDate: query.startDate,
       endDate: query.endDate,
     })
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching schedule assignments:', error)
+    logger.error('Error fetching schedule assignments', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch schedule assignments' },
       { status: 500 }
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
       message: `${createdAssignments.length} schedule assignments created successfully`,
     }, { status: 201 })
   } catch (error) {
-    console.error('Error creating schedule assignments:', error)
+    logger.error('Error creating schedule assignments', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to create schedule assignments' },
       { status: 500 }
@@ -203,7 +204,7 @@ export async function PUT(request: NextRequest) {
       message: `${updatedAssignments.length} schedule assignments updated successfully`,
     })
   } catch (error) {
-    console.error('Error updating schedule assignments:', error)
+    logger.error('Error updating schedule assignments', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to update schedule assignments' },
       { status: 500 }
@@ -244,7 +245,7 @@ export async function DELETE(request: NextRequest) {
       message: `${deletedCount} schedule assignments deleted successfully`,
     })
   } catch (error) {
-    console.error('Error deleting schedule assignments:', error)
+    logger.error('Error deleting schedule assignments', error as Error)
     return NextResponse.json(
       { success: false, error: 'Failed to delete schedule assignments' },
       { status: 500 }

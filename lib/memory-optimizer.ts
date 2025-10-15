@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Memory Optimizer
  * Provides memory optimization for the application
@@ -102,7 +104,7 @@ export class MemoryOptimizer {
       this.startCleanupInterval();
     }
     
-    console.log('Memory optimizer initialized');
+    logger.info('Memory optimizer initialized');
   }
 
   /**
@@ -124,7 +126,7 @@ export class MemoryOptimizer {
     // Clear compressed data
     this.compressedData.clear();
     
-    console.log('Memory optimizer cleaned up');
+    logger.info('Memory optimizer cleaned up');
   }
 
   /**
@@ -278,9 +280,9 @@ export class MemoryOptimizer {
       this.lastOptimization = new Date();
       this.optimizationsCount++;
       
-      console.log(`Memory optimization completed (${isAggressive ? 'aggressive' : 'standard'})`);
+      logger.info('Memory optimization completed', { mode: isAggressive ? 'aggressive' : 'standard' });
     } catch (error) {
-      console.error('Error during memory optimization:', error);
+      logger.error('Error during memory optimization', error as Error);
     } finally {
       this.isOptimizing = false;
     }
@@ -332,10 +334,10 @@ export class MemoryOptimizer {
       try {
         if (strategy.condition()) {
           strategy.execute();
-          console.log(`Executed cleanup strategy: ${strategy.name}`);
+          logger.info('Executed cleanup strategy: ${strategy.name}');
         }
       } catch (error) {
-        console.error(`Error executing cleanup strategy ${strategy.name}:`, error);
+        logger.error('Error executing cleanup strategy ${strategy.name}', error as Error);
       }
     }
   }
@@ -347,9 +349,9 @@ export class MemoryOptimizer {
     if ('gc' in window) {
       try {
         (window as any).gc();
-        console.log('Manual garbage collection performed');
+        logger.info('Manual garbage collection performed');
       } catch (error) {
-        console.error('Error performing garbage collection:', error);
+        logger.error('Error performing garbage collection', error as Error);
       }
     } else {
       // Fallback: try to trigger garbage collection by creating and cleaning up objects
@@ -358,9 +360,9 @@ export class MemoryOptimizer {
         const largeArray = new Array(1000000).fill(0);
         // Force garbage collection by setting to null
         (largeArray as any) = null;
-        console.log('Garbage collection hint performed');
+        logger.info('Garbage collection hint performed');
       } catch (error) {
-        console.error('Error performing garbage collection hint:', error);
+        logger.error('Error performing garbage collection hint', error as Error);
       }
     }
   }
@@ -372,7 +374,7 @@ export class MemoryOptimizer {
     // This is a placeholder implementation
     // In a real application, you would clear the image cache
     
-    console.log('Image cache cleared');
+    logger.info('Image cache cleared');
   }
 
   /**
@@ -382,7 +384,7 @@ export class MemoryOptimizer {
     // This is a placeholder implementation
     // In a real application, you would clear the data cache
     
-    console.log('Data cache cleared');
+    logger.info('Data cache cleared');
   }
 
   /**
@@ -392,7 +394,7 @@ export class MemoryOptimizer {
     // This is a placeholder implementation
     // In a real application, you would unload unused modules
     
-    console.log('Unused modules unloaded');
+    logger.info('Unused modules unloaded');
   }
 
   /**
@@ -402,7 +404,7 @@ export class MemoryOptimizer {
     // This is a placeholder implementation
     // In a real application, you would compress memory
     
-    console.log('Memory compressed');
+    logger.info('Memory compressed');
   }
 
   /**
@@ -413,7 +415,7 @@ export class MemoryOptimizer {
       pool.pool = [];
     }
     
-    console.log('Object pools cleared');
+    logger.info('Object pools cleared');
   }
 
   /**
@@ -422,7 +424,7 @@ export class MemoryOptimizer {
   private clearCompressedData(): void {
     this.compressedData.clear();
     
-    console.log('Compressed data cleared');
+    logger.info('Compressed data cleared');
   }
 
   /**
@@ -507,7 +509,7 @@ export class MemoryOptimizer {
       this.lazyLoadedModules.set(name, module);
       return module;
     } catch (error) {
-      console.error(`Error loading module ${name}:`, error);
+      logger.error('Error loading module ${name}', error as Error);
       throw error;
     }
   }
@@ -517,7 +519,7 @@ export class MemoryOptimizer {
    */
   unloadModule(name: string): void {
     this.lazyLoadedModules.delete(name);
-    console.log(`Module unloaded: ${name}`);
+    logger.info('Module unloaded: ${name}');
   }
 
   /**
@@ -532,7 +534,7 @@ export class MemoryOptimizer {
     // In a real application, you would compress the data
     
     this.compressedData.set(key, data);
-    console.log(`Data compressed: ${key}`);
+    logger.info('Data compressed: ${key}');
   }
 
   /**
@@ -548,7 +550,7 @@ export class MemoryOptimizer {
     
     const data = this.compressedData.get(key);
     if (data) {
-      console.log(`Data decompressed: ${key}`);
+      logger.info('Data decompressed: ${key}');
     }
     return data;
   }

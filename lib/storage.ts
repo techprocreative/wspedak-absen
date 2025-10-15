@@ -1,5 +1,6 @@
 import { storageManager, AttendanceRecord, User, SyncQueueItem, OfflineData, AppSettings } from './db'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Cache interface
 interface CacheItem<T> {
   data: T
@@ -439,7 +440,7 @@ export class StorageService {
         const isPersistent = await navigator.storage.persist()
         return isPersistent
       } catch (error) {
-        console.error('Error requesting persistent storage:', error)
+        logger.error('Error requesting persistent storage', error as Error)
         return false
       }
     }

@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverDbManager } from '@/lib/server-db'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 type ActionType = 'check-in' | 'break-start' | 'break-end' | 'check-out'
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
     // If late excuse provided, create exception request
     if (lateExcuse && action === 'check-in') {
       // In production, save to attendance_exceptions table
-      console.log('Late excuse submitted:', {
+      logger.info('Late excuse submitted', {
         user: matchedUser.name,
         type: lateExcuse.reasonType,
         notes: lateExcuse.notes,
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error processing action:', error)
+    logger.error('Error processing action', error as Error)
     return NextResponse.json(
       { 
         success: false, 

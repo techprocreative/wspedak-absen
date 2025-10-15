@@ -1,3 +1,5 @@
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+
 /**
  * Progressive Model Loader
  * Implements progressive loading of face recognition models with lightweight fallbacks
@@ -561,7 +563,7 @@ export class ProgressiveModelLoader {
   private releaseHighQualityModels(): void {
     this.loadedModels.forEach((models, type) => {
       if (models.has(ModelQuality.HIGH)) {
-        console.log(`Releasing high-quality model for ${type} due to memory constraints`);
+        logger.info('Releasing high-quality model for ${type} due to memory constraints');
         models.delete(ModelQuality.HIGH);
       }
     });

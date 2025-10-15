@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ReportBuilder } from '@/lib/report-builder'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Mock authentication check
 // In a real implementation, this would use proper authentication
 async function checkAuth() {
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
       headers
     })
   } catch (error) {
-    console.error('Export report error:', error)
+    logger.error('Export report error', error as Error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

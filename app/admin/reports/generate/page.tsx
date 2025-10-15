@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Download, FileText, Calendar, CheckCircle } from 'lucide-react'
 import { ApiClient } from '@/lib/api-client'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export default function ReportGeneratePage() {
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -51,7 +52,7 @@ export default function ReportGeneratePage() {
         throw new Error('Start date must be before end date')
       }
 
-      console.log('Generating report:', config)
+      logger.info('Generating report', { config })
 
       // Generate report
       const blob = await ApiClient.generateReport({
@@ -82,13 +83,13 @@ export default function ReportGeneratePage() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
 
-      console.log('Report downloaded successfully')
+      logger.info('Report downloaded successfully')
       setSuccess(true)
       
       // Reset success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000)
     } catch (err: any) {
-      console.error('Report generation failed:', err)
+      logger.error('Report generation failed', err as Error)
       setError(err.message || 'Failed to generate report')
     } finally {
       setGenerating(false)
