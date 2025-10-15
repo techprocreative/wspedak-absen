@@ -3,7 +3,8 @@
  * Handles face embeddings storage and retrieval using Supabase
  */
 
-import { supabaseService, supabase } from './supabase';
+// Use simplified Supabase client to avoid multiple instance warnings
+import { supabase } from './supabase-simple';
 import { validateEmbedding, normalizeEmbedding } from './face-matching';
 import { logger } from './logger';
 

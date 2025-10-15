@@ -218,9 +218,10 @@ export default function FaceCheckinPage() {
     }
   }, [modelsLoaded, stream])
 
-  // Get location
+  // Get location (optional - don't block if not available)
   useEffect(() => {
-    if (navigator.geolocation) {
+    // Only try to get location if we're in a secure context (HTTPS)
+    if (typeof window !== 'undefined' && window.isSecureContext && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setLocation({
@@ -230,7 +231,15 @@ export default function FaceCheckinPage() {
           logger.info('Location obtained')
         },
         (err) => {
-          logger.warn('Location not available', { error: err })
+          // Don't log warning for permission denied - it's expected in some environments
+          if (err.code !== err.PERMISSION_DENIED) {
+            logger.warn('Location not available', { error: err.message })
+          }
+          // Location is optional, so we continue without it
+        },
+        {
+          timeout: 5000, // 5 second timeout
+          enableHighAccuracy: false // Don't require high accuracy
         }
       )
     }

@@ -87,8 +87,8 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
 
 // Default connection pool configuration
 const DEFAULT_CONNECTION_POOL_CONFIG: ConnectionPoolConfig = {
-  maxConnections: 5, // Maximum number of connections in the pool
-  minConnections: 1, // Minimum number of connections to maintain
+  maxConnections: 2, // Reduced: Maximum number of connections in the pool
+  minConnections: 0, // Changed to 0 to avoid creating connections until needed
   acquireTimeout: 5000, // Maximum time to wait for a connection (ms)
   idleTimeout: 30000, // Time after which idle connections are closed (ms)
   maxLifetime: 300000, // Maximum lifetime of a connection (ms)
@@ -110,8 +110,10 @@ class ConnectionPool {
   constructor(config: ConnectionPoolConfig = DEFAULT_CONNECTION_POOL_CONFIG) {
     this.config = config
     
-    // Start with minimum connections
-    this.initializeMinConnections()
+    // Only initialize connections if minConnections > 0
+    if (this.config.minConnections > 0) {
+      this.initializeMinConnections()
+    }
     
     // Start health check interval
     this.startHealthCheckInterval()
@@ -706,9 +708,18 @@ class SupabaseService {
 // Create a singleton instance
 export const supabaseService = new SupabaseService()
 
+// Lazy-loaded singleton client to avoid multiple instances
+let directClient: SupabaseClient | null = null
+
 // Export the raw client for direct usage when needed
 // Note: This is deprecated in favor of getClient() which uses connection pooling
-export const supabase = supabaseService.getDirectClient()
+export const supabase = (() => {
+  // Only create the client when it's actually accessed
+  if (!directClient) {
+    directClient = supabaseService.getDirectClient()
+  }
+  return directClient
+})()
 
 // Helper function to check if we're online
 export const isOnline = () => {
