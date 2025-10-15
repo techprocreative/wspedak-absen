@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import {
   Archive,
   Trash2,
@@ -384,7 +385,7 @@ export function DataArchival() {
         message: `Archival completed successfully${dryRun ? ' (dry run)' : ''}`
       })
     } catch (error) {
-      console.error('Archival error:', error)
+      logger.error('Archival error', error as Error)
       setArchivalProgress({
         current: 0,
         total: 100,
@@ -446,7 +447,7 @@ export function DataArchival() {
         message: `Cleanup completed successfully${rule.dryRun ? ' (dry run)' : ''}`
       })
     } catch (error) {
-      console.error('Cleanup error:', error)
+      logger.error('Cleanup error', error as Error)
       setArchivalProgress({
         current: 0,
         total: 100,
@@ -470,7 +471,7 @@ export function DataArchival() {
       
       alert('Record restored successfully')
     } catch (error) {
-      console.error('Restore error:', error)
+      logger.error('Restore error', error as Error)
       alert('Failed to restore record')
     }
   }, [])
@@ -484,7 +485,7 @@ export function DataArchival() {
       
       setArchivedRecords(prev => prev.filter(record => record.id !== recordId))
     } catch (error) {
-      console.error('Delete error:', error)
+      logger.error('Delete error', error as Error)
       alert('Failed to delete record')
     }
   }, [])
@@ -516,7 +517,7 @@ export function DataArchival() {
         message: 'Retention policies applied successfully'
       })
     } catch (error) {
-      console.error('Retention policy application error:', error)
+      logger.error('Retention policy application error', error as Error)
       setArchivalProgress({
         current: 0,
         total: 100,

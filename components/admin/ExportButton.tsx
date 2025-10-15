@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -124,7 +125,7 @@ export function ExportButton({
         setOpen(false)
       }
     } catch (error) {
-      console.error('Export failed:', error)
+      logger.error('Export failed', error as Error)
     } finally {
       setIsExporting(false)
     }
@@ -365,7 +366,7 @@ export function QuickExportButton({
       setIsExporting(true)
       await onExport()
     } catch (error) {
-      console.error('Export failed:', error)
+      logger.error('Export failed', error as Error)
     } finally {
       setIsExporting(false)
     }

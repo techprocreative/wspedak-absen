@@ -14,6 +14,7 @@ import { attendanceService } from '@/lib/attendance';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { DailyAttendanceRecord } from '@/types';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 interface FilterOptions {
   startDate: string;
   endDate: string;
@@ -55,7 +56,7 @@ export function AttendanceHistory() {
       const records = await attendanceService.getAttendanceHistory(user.id, startDate, endDate);
       setAttendanceRecords(records);
     } catch (error) {
-      console.error('Error fetching attendance records:', error);
+      logger.error('Error fetching attendance records', error as Error);
     } finally {
       setIsLoading(false);
     }

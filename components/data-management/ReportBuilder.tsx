@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   ReportBuilder, 
   ReportConfig, 
   ReportField, 
@@ -85,7 +86,7 @@ export function ReportBuilderComponent() {
       const reportsList = await ReportBuilder.getAll()
       setReports(reportsList)
     } catch (error) {
-      console.error('Failed to load reports:', error)
+      logger.error('Failed to load reports', error as Error)
     }
   }, [])
 
@@ -245,7 +246,7 @@ export function ReportBuilderComponent() {
       setReportData(data)
       setActiveTab("preview")
     } catch (error) {
-      console.error('Failed to build report:', error)
+      logger.error('Failed to build report', error as Error)
     } finally {
       setIsBuilding(false)
     }
@@ -303,7 +304,7 @@ export function ReportBuilderComponent() {
       
       setShowSaveDialog(false)
     } catch (error) {
-      console.error('Failed to save report:', error)
+      logger.error('Failed to save report', error as Error)
     }
   }, [reportBuilder, reportName, reportDescription, reportDataSource, selectedFields, filters, sortBy, aggregations, chartType, loadReports])
 
@@ -330,7 +331,7 @@ export function ReportBuilderComponent() {
       
       setActiveTab("builder")
     } catch (error) {
-      console.error('Failed to load report:', error)
+      logger.error('Failed to load report', error as Error)
     }
   }, [])
 
@@ -340,7 +341,7 @@ export function ReportBuilderComponent() {
       await ReportBuilder.delete(reportId)
       await loadReports()
     } catch (error) {
-      console.error('Failed to delete report:', error)
+      logger.error('Failed to delete report', error as Error)
     }
   }, [loadReports])
 
@@ -361,7 +362,7 @@ export function ReportBuilderComponent() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Failed to export report:', error)
+      logger.error('Failed to export report', error as Error)
     }
   }, [reportBuilder, reportName])
 
@@ -383,7 +384,7 @@ export function ReportBuilderComponent() {
       await newBuilder.save()
       await loadReports()
     } catch (error) {
-      console.error('Failed to duplicate report:', error)
+      logger.error('Failed to duplicate report', error as Error)
     }
   }, [loadReports])
 

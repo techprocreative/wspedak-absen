@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import {
   Activity,
   AlertCircle,
@@ -107,7 +108,7 @@ export const MonitoringDashboard: React.FC<DashboardProps> = ({
       
       setLastRefresh(new Date());
     } catch (error) {
-      console.error('Error refreshing monitoring data:', error);
+      logger.error('Error refreshing monitoring data', error as Error);
     } finally {
       setIsLoading(false);
     }

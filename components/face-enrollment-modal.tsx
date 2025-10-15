@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Camera, X, Check } from 'lucide-react'
 import { ApiClient } from '@/lib/api-client'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 interface FaceEnrollmentModalProps {
   isOpen: boolean
   onClose: () => void
@@ -36,14 +37,14 @@ export function FaceEnrollmentModal({
       if (!isOpen) return
       
       try {
-        console.log('Loading face-api models...')
+        logger.info('Loading face-api models...')
         await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
         await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
         await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
         setModelsLoaded(true)
-        console.log('Models loaded successfully')
+        logger.info('Models loaded successfully')
       } catch (err) {
-        console.error('Failed to load models:', err)
+        logger.error('Failed to load models', err as Error)
         setError('Failed to load face recognition models. Please ensure models are downloaded.')
       }
     }
@@ -57,7 +58,7 @@ export function FaceEnrollmentModal({
       if (!isOpen || !videoRef.current || !modelsLoaded) return
 
       try {
-        console.log('Starting camera...')
+        logger.info('Starting camera...')
         const mediaStream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             width: 640, 
@@ -67,9 +68,9 @@ export function FaceEnrollmentModal({
         })
         videoRef.current.srcObject = mediaStream
         setStream(mediaStream)
-        console.log('Camera started')
+        logger.info('Camera started')
       } catch (err) {
-        console.error('Camera error:', err)
+        logger.error('Camera error', err as Error)
         setError('Failed to access camera. Please grant camera permissions.')
       }
     }
@@ -91,7 +92,7 @@ export function FaceEnrollmentModal({
     setError(null)
 
     try {
-      console.log('Detecting face...')
+      logger.info('Detecting face...')
       
       // Detect face
       const detection = await faceapi
@@ -103,7 +104,7 @@ export function FaceEnrollmentModal({
         throw new Error('No face detected. Please ensure your face is clearly visible.')
       }
 
-      console.log('Face detected with confidence:', detection.detection.score)
+      logger.info('Face detected with confidence', { value: detection.detection.score })
 
       // Get descriptor
       const descriptor = Array.from(detection.descriptor)
@@ -111,7 +112,7 @@ export function FaceEnrollmentModal({
       // Calculate quality score
       const quality = detection.detection.score
 
-      console.log('Enrolling face...')
+      logger.info('Enrolling face...')
 
       // Send to API
       await ApiClient.enrollFace({
@@ -124,7 +125,7 @@ export function FaceEnrollmentModal({
         }
       })
 
-      console.log('Face enrolled successfully')
+      logger.info('Face enrolled successfully')
 
       // Success
       setSuccess(true)
@@ -133,7 +134,7 @@ export function FaceEnrollmentModal({
         handleClose()
       }, 1500)
     } catch (err: any) {
-      console.error('Enrollment error:', err)
+      logger.error('Enrollment error', err as Error)
       setError(err.message || 'Failed to enroll face')
     } finally {
       setCapturing(false)

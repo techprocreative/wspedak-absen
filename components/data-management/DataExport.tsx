@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import {
   Download,
   FileText,
@@ -208,7 +209,7 @@ export function DataExport() {
       setExportResult(mockResult)
       setActiveTab("results")
     } catch (error) {
-      console.error('Export error:', error)
+      logger.error('Export error', error as Error)
       setExportProgress({
         current: 0,
         total: 100,

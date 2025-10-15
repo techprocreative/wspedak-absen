@@ -12,6 +12,7 @@ import { FaceRecognitionCamera } from '@/components/face-recognition-camera';
 import { Camera, MapPin, Clock, UserCheck, UserX } from 'lucide-react';
 import { MemoryOptimizer } from '@/lib/hardware-optimization';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 interface LocationData {
   latitude: number;
   longitude: number;
@@ -83,7 +84,7 @@ export function AttendanceRecorder() {
         setAttendanceStatus('not-clocked-in');
       }
     } catch (error) {
-      console.error('Error checking attendance status:', error);
+      logger.error('Error checking attendance status', error as Error);
       toast({
         title: 'Error',
         description: 'Failed to check attendance status',
@@ -144,7 +145,7 @@ export function AttendanceRecorder() {
       });
       setPhotoData(null);
     } catch (error) {
-      console.error('Error clocking in:', error);
+      logger.error('Error clocking in', error as Error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to clock in',
@@ -179,7 +180,7 @@ export function AttendanceRecorder() {
       });
       setPhotoData(null);
     } catch (error) {
-      console.error('Error clocking out:', error);
+      logger.error('Error clocking out', error as Error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to clock out',

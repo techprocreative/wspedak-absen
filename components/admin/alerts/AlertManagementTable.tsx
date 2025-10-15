@@ -12,7 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   RefreshCw, 
   AlertTriangle, 
   AlertCircle, 
@@ -109,7 +110,7 @@ export function AlertManagementTable({
         fetchAlerts();
       }
     } catch (err) {
-      console.error('Error acknowledging alert:', err);
+      logger.error('Error acknowledging alert', err as Error);
     }
   };
 
@@ -131,7 +132,7 @@ export function AlertManagementTable({
         fetchAlerts();
       }
     } catch (err) {
-      console.error('Error resolving alert:', err);
+      logger.error('Error resolving alert', err as Error);
     }
   };
 
@@ -153,7 +154,7 @@ export function AlertManagementTable({
         fetchAlerts();
       }
     } catch (err) {
-      console.error('Error assigning alert:', err);
+      logger.error('Error assigning alert', err as Error);
     }
   };
 

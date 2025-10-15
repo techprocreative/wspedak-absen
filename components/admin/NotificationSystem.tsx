@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   Bell, 
   X, 
   Check, 
@@ -135,7 +136,7 @@ export function NotificationSystem({
       await new Promise(resolve => setTimeout(resolve, 500))
       setNotifications(mockNotifications.slice(0, maxNotifications))
     } catch (error) {
-      console.error("Error fetching notifications:", error)
+      logger.error('Error fetching notifications', error as Error)
     } finally {
       setLoading(false)
     }
@@ -159,7 +160,7 @@ export function NotificationSystem({
         )
       )
     } catch (error) {
-      console.error("Error marking notification as read:", error)
+      logger.error('Error marking notification as read', error as Error)
     }
   }, [])
 
@@ -175,7 +176,7 @@ export function NotificationSystem({
         prev.map(notification => ({ ...notification, read: true }))
       )
     } catch (error) {
-      console.error("Error marking all notifications as read:", error)
+      logger.error('Error marking all notifications as read', error as Error)
     }
   }, [])
 
@@ -191,7 +192,7 @@ export function NotificationSystem({
         prev.filter(notification => notification.id !== notificationId)
       )
     } catch (error) {
-      console.error("Error deleting notification:", error)
+      logger.error('Error deleting notification', error as Error)
     }
   }, [])
 

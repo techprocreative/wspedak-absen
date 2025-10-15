@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react'
 import { WifiOff, AlertTriangle, RefreshCw, X, CheckCircle, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   getNetworkStatus, 
   NetworkStatus,
   OfflineMessages,
@@ -115,7 +116,7 @@ export function OfflineBanner({
         }
       }
     } catch (error) {
-      console.error('Retry failed:', error)
+      logger.error('Retry failed', error as Error)
     } finally {
       setIsRetrying(false)
     }

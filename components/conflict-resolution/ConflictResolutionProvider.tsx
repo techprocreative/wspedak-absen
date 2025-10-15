@@ -7,6 +7,7 @@ import React, { createContext, useContext, useReducer, useEffect, ReactNode } fr
 import { Conflict, ConflictStats, ConflictHistoryEntry, ResolutionStrategy, ManualResolutionRequest } from '@/lib/conflict-types';
 import { ConflictResolver } from '@/lib/conflict-resolver';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 // Initial state
 interface ConflictResolutionState {
   conflicts: Conflict[];
@@ -210,7 +211,7 @@ export const ConflictResolutionProvider: React.FC<ConflictResolutionProviderProp
       dispatch({ type: 'SET_HISTORY', payload: history });
       dispatch({ type: 'SET_NOTIFICATIONS', payload: notifications });
     } catch (error) {
-      console.error('Error loading conflicts:', error);
+      logger.error('Error loading conflicts', error as Error);
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -251,7 +252,7 @@ export const ConflictResolutionProvider: React.FC<ConflictResolutionProviderProp
       
       return conflicts;
     } catch (error) {
-      console.error('Error detecting conflicts:', error);
+      logger.error('Error detecting conflicts', error as Error);
       return [];
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -284,7 +285,7 @@ export const ConflictResolutionProvider: React.FC<ConflictResolutionProviderProp
       
       return success;
     } catch (error) {
-      console.error('Error resolving conflict:', error);
+      logger.error('Error resolving conflict', error as Error);
       return false;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -321,7 +322,7 @@ export const ConflictResolutionProvider: React.FC<ConflictResolutionProviderProp
       
       return success;
     } catch (error) {
-      console.error('Error manually resolving conflict:', error);
+      logger.error('Error manually resolving conflict', error as Error);
       return false;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -354,7 +355,7 @@ export const ConflictResolutionProvider: React.FC<ConflictResolutionProviderProp
       
       return success;
     } catch (error) {
-      console.error('Error escalating conflict:', error);
+      logger.error('Error escalating conflict', error as Error);
       return false;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });

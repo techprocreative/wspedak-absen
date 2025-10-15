@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import {
   Database,
   Download,
@@ -294,7 +295,7 @@ export function BackupRestore() {
       
       setBackupHistory(prev => [newBackup, ...prev])
     } catch (error) {
-      console.error('Backup error:', error)
+      logger.error('Backup error', error as Error)
       setBackupProgress({
         current: 0,
         total: 100,
@@ -359,7 +360,7 @@ export function BackupRestore() {
         message: 'Restore completed successfully'
       })
     } catch (error) {
-      console.error('Restore error:', error)
+      logger.error('Restore error', error as Error)
       setRestoreProgress({
         current: 0,
         total: 100,
@@ -381,7 +382,7 @@ export function BackupRestore() {
       
       setBackupHistory(prev => prev.filter(backup => backup.id !== backupId))
     } catch (error) {
-      console.error('Delete backup error:', error)
+      logger.error('Delete backup error', error as Error)
     }
   }, [])
 

@@ -10,6 +10,7 @@ import { useClientTime } from "@/hooks/use-client-time"
 import { ApiClient } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 interface DashboardStats {
   total: number
   active: number
@@ -45,7 +46,7 @@ export function AdminDashboard() {
       const response = await ApiClient.getDashboardStats()
       setStats(response.data)
     } catch (err: any) {
-      console.error('Failed to fetch stats:', err)
+      logger.error('Failed to fetch stats', err as Error)
       setError(err.message || 'Failed to fetch dashboard statistics')
     } finally {
       setLoading(false)

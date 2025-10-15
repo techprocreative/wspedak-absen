@@ -18,6 +18,7 @@ import { faceStorage } from '@/lib/face-storage';
 import { FaceEmbedding } from '@/lib/face-recognition';
 import { MemoryOptimizer, CPUOptimizer } from '@/lib/hardware-optimization';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 interface FaceEnrollmentProps {
   userId: string;
   userName: string;
@@ -76,7 +77,7 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
         await faceAPI.loadModels();
         setIsModelLoaded(true);
       } catch (err) {
-        console.error('Failed to load face API models:', err);
+        logger.error('Failed to load face API models', err as Error);
         setError('Failed to initialize face recognition. Please try again.');
       }
     };
@@ -145,7 +146,7 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
         setError(null);
       }
     } catch (err) {
-      console.error('Error accessing camera:', err);
+      logger.error('Error accessing camera', err as Error);
       setError('Could not access the camera. Please ensure you have granted camera permissions.');
     }
   };
@@ -269,7 +270,7 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
         }
       }
     } catch (err) {
-      console.error('Error capturing face:', err);
+      logger.error('Error capturing face', err as Error);
       setError('Failed to capture face. Please try again.');
     } finally {
       setIsProcessing(false);

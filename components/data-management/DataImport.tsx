@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import {
   Upload,
   Download,
@@ -215,7 +216,7 @@ export function DataImport() {
       
       setActiveTab("mapping")
     } catch (error) {
-      console.error('Preview error:', error)
+      logger.error('Preview error', error as Error)
     }
   }, [file, importType, config])
 
@@ -259,7 +260,7 @@ export function DataImport() {
       setImportResult(mockResult)
       setActiveTab("results")
     } catch (error) {
-      console.error('Import error:', error)
+      logger.error('Import error', error as Error)
       setImportProgress({
         current: 0,
         total: 100,
@@ -295,7 +296,7 @@ export function DataImport() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Template download error:', error)
+      logger.error('Template download error', error as Error)
     }
   }, [importType])
 

@@ -12,6 +12,7 @@ import { attendanceService } from '@/lib/attendance';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { AttendanceStats } from '@/types';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 interface DepartmentStats {
   name: string;
   totalEmployees: number;
@@ -89,7 +90,7 @@ export function AttendanceDashboard() {
         late: 7,
       });
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      logger.error('Error fetching dashboard data', error as Error);
     } finally {
       setIsLoading(false);
     }

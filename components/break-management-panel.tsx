@@ -14,6 +14,7 @@ import { Coffee, Clock, PlayCircle, StopCircle, CheckCircle, AlertCircle, Loader
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 interface BreakManagementPanelProps {
   onBreakStatusChange?: (isOnBreak: boolean) => void;
 }
@@ -41,7 +42,7 @@ export function BreakManagementPanel({ onBreakStatusChange }: BreakManagementPan
       setIsOnBreak(onBreakStatus);
       onBreakStatusChange?.(onBreakStatus);
     } catch (error: any) {
-      console.error("Error checking break status:", error);
+      logger.error('Error checking break status', error as Error);
     } finally {
       setLoading(false);
     }

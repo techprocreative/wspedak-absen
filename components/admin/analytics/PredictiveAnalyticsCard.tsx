@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
+import { logger } from '@/lib/logger'
+import {
   RefreshCw, 
   TrendingUp, 
   Users, 
@@ -75,7 +76,7 @@ export function PredictiveAnalyticsCard({
       if (attendanceResponse.ok) {
         const attendanceResult = await attendanceResponse.json();
         if (attendanceResult.success) {
-          console.log('Attendance predictions data:', attendanceResult.data.predictions);
+          logger.info('Attendance predictions data', { value: attendanceResult.data.predictions });
           setAttendancePredictions(attendanceResult.data.predictions);
         }
       }
@@ -100,7 +101,7 @@ export function PredictiveAnalyticsCard({
       if (productivityResponse.ok) {
         const productivityResult = await productivityResponse.json();
         if (productivityResult.success) {
-          console.log('Productivity forecasts data:', productivityResult.data.forecasts);
+          logger.info('Productivity forecasts data', { value: productivityResult.data.forecasts });
           setProductivityForecasts(productivityResult.data.forecasts);
         }
       }

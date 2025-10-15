@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,7 +76,7 @@ export function ConfirmModal({
       await onConfirm()
       onOpenChange(false)
     } catch (error) {
-      console.error('Confirm action failed:', error)
+      logger.error('Confirm action failed', error as Error)
     } finally {
       setInternalLoading(false)
     }

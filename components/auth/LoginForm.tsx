@@ -11,6 +11,7 @@ import { Shield, Eye, EyeOff, Loader2, Lock, User, Wifi, WifiOff } from 'lucide-
 import { useAuth } from './AuthProvider'
 import { supabaseService } from '@/lib/supabase'
 
+import { logger } from '@/lib/logger'
 interface LoginFormProps {
   onSuccess?: () => void
   redirectTo?: string
@@ -74,7 +75,7 @@ export function LoginForm({
     setSuccess("")
 
     // Debug logging
-    console.log('Login attempt:', {
+    logger.info('Login attempt', {
       email: formData.email,
       passwordLength: formData.password.length,
       isOnline,

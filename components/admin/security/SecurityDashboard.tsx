@@ -11,7 +11,8 @@ import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   Table, 
   TableBody, 
   TableCell, 
@@ -169,7 +170,7 @@ export default function SecurityDashboard() {
         setPasswordPolicy(policyData.data)
       }
     } catch (error) {
-      console.error('Error fetching security data:', error)
+      logger.error('Error fetching security data', error as Error)
     } finally {
       setIsLoading(false)
       setRefreshing(false)
@@ -214,7 +215,7 @@ export default function SecurityDashboard() {
         setRecentLogs(data.data.logs)
       }
     } catch (error) {
-      console.error('Error fetching filtered logs:', error)
+      logger.error('Error fetching filtered logs', error as Error)
     } finally {
       setIsLoading(false)
     }
@@ -240,7 +241,7 @@ export default function SecurityDashboard() {
         refreshData()
       }
     } catch (error) {
-      console.error('Error updating password policy:', error)
+      logger.error('Error updating password policy', error as Error)
     }
   }
 

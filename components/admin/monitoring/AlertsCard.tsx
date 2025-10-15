@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   RefreshCw, 
   AlertTriangle, 
   AlertCircle, 
@@ -107,7 +108,7 @@ export function AlertsCard({
         fetchAlerts();
       }
     } catch (err) {
-      console.error('Error acknowledging alert:', err);
+      logger.error('Error acknowledging alert', err as Error);
     }
   };
 

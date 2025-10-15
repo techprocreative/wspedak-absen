@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
+import {
   RefreshCw, 
   CheckCircle, 
   XCircle, 
@@ -193,7 +194,7 @@ export function SyncProgress({
     try {
       await forceSync()
     } catch (error) {
-      console.error('Sync failed:', error)
+      logger.error('Sync failed', error as Error)
     } finally {
       setIsManualSyncing(false)
     }

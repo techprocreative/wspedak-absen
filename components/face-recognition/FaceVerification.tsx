@@ -21,6 +21,7 @@ import { FaceEmbedding } from '@/lib/face-recognition';
 import { faceRecognition, FaceMatch } from '@/lib/face-recognition';
 import { MemoryOptimizer } from '@/lib/hardware-optimization';
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 interface FaceVerificationProps {
   onVerificationSuccess?: (userId: string, confidence: number) => void;
   onManualEntry?: (employeeId: string) => void;
@@ -101,7 +102,7 @@ export const FaceVerification: React.FC<FaceVerificationProps> = ({
           setError('No faces enrolled in the system. Please enroll faces first.');
         }
       } catch (err) {
-        console.error('Failed to initialize face verification:', err);
+        logger.error('Failed to initialize face verification', err as Error);
         setError('Failed to initialize face recognition. Please try again.');
       }
     };
@@ -172,7 +173,7 @@ export const FaceVerification: React.FC<FaceVerificationProps> = ({
         setVerificationResult(null);
       }
     } catch (err) {
-      console.error('Error accessing camera:', err);
+      logger.error('Error accessing camera', err as Error);
       setError('Could not access the camera. Please ensure you have granted camera permissions.');
     }
   };
@@ -305,7 +306,7 @@ export const FaceVerification: React.FC<FaceVerificationProps> = ({
         }
       }
     } catch (err) {
-      console.error('Error verifying face:', err);
+      logger.error('Error verifying face', err as Error);
       setError('Failed to verify face. Please try again.');
     } finally {
       setIsProcessing(false);

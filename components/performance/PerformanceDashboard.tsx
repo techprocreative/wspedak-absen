@@ -16,6 +16,7 @@ import { useMemoryMonitor } from '@/lib/memory-monitor';
 import { useQueryOptimizer } from '@/lib/query-optimizer';
 import { useTransactionBatcher } from '@/lib/transaction-batcher';
 import { useClientTime } from '@/hooks/use-client-time';
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 import {
   Activity,
   AlertCircle,
@@ -129,7 +130,7 @@ export function PerformanceDashboard({ className }: PerformanceDashboardProps) {
       const perfThresholds = getThresholds();
       setThresholds(perfThresholds);
     } catch (error) {
-      console.error('Error refreshing performance data:', error);
+      logger.error('Error refreshing performance data', error as Error);
     } finally {
       setIsRefreshing(false);
     }
@@ -222,7 +223,7 @@ export function PerformanceDashboard({ className }: PerformanceDashboardProps) {
   // Handle generate report
   const handleGenerateReport = () => {
     const report = generateReport();
-    console.log('Performance report:', report);
+    logger.info('Performance report', { report });
     // In a real application, you might download this report or send it to a server
   };
   
