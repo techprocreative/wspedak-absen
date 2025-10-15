@@ -15,12 +15,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:performance": "node scripts/performance-test.js",
     "check:console": "node scripts/check-console-logs.js",
-    "security:check": "npm audit && node scripts/check-console-logs.js"
-  },
-  "overrides": {
-    "@testing-library/react-hooks": {
-      "@types/react": "$@types/react"
-    }
+    "security:check": "npm audit && node scripts/check-console-logs.js",
+    "vercel-build": "npm install --legacy-peer-deps && next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
