@@ -67,18 +67,6 @@ const nextConfig = {
   devIndicators: {
     buildActivityPosition: 'bottom-right',
   },
-  // Skip error pages export to avoid <Html> import issues
-  exportPathMap: async function (
-    defaultPathMap,
-    { dev, dir, outDir, distDir, buildId }
-  ) {
-    const pathMap = { ...defaultPathMap }
-    // Remove error pages from static export
-    delete pathMap['/404']
-    delete pathMap['/500']
-    delete pathMap['/_error']
-    return pathMap
-  },
   // Only expose truly necessary environment variables to the client
   // NEVER expose secrets, passwords, or service keys
   env: {
