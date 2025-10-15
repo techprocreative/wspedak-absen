@@ -92,6 +92,15 @@ export function FaceRecognitionCamera({
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
+        
+        // Wait for video metadata to load before marking as streaming
+        videoRef.current.onloadedmetadata = () => {
+          setIsStreaming(true)
+          logger.info('Camera started successfully')
+        }
+      } else {
+        // Fallback: set streaming immediately if video ref exists
+        logger.warn('Video ref not available, setting streaming state immediately')
         setIsStreaming(true)
       }
     } catch (err) {
