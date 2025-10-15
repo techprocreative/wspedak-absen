@@ -51,4 +51,29 @@ if (fs.existsSync(tsconfigPath)) {
   console.log('📋 tsconfig paths:', tsconfig.compilerOptions?.paths);
 }
 
+// Test Next.js path resolution
+console.log('🔍 Testing Next.js path resolution...');
+try {
+  const { resolve } = require('path');
+  const { existsSync } = require('fs');
+  
+  // Test path resolution
+  const testPaths = [
+    '@/components/ui/tabs',
+    '@/components/ui/card',
+    '@/components/ui/badge',
+    '@/components/admin/alerts/AlertManagementTable'
+  ];
+  
+  testPaths.forEach(testPath => {
+    // Simulate Next.js path resolution
+    const resolvedPath = testPath.replace('@/', './');
+    console.log(`🔍 ${testPath} -> ${resolvedPath}`);
+    console.log(`   📁 Exists: ${existsSync(resolvedPath)}`);
+  });
+  
+} catch (error) {
+  console.error('❌ Path resolution test failed:', error.message);
+}
+
 console.log('🏁 DEBUG: End of investigation');
