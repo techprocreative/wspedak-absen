@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverDbManager } from '@/lib/server-db'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
@@ -28,7 +29,13 @@ export async function POST(request: NextRequest) {
 
     if (usersWithFace.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'No enrolled faces found' },
+        { 
+          success: false, 
+          error: 'No enrolled faces found',
+          errorCode: 'NO_FACES_ENROLLED',
+          message: 'No users have enrolled their faces yet. Please enroll your face first to use face recognition attendance.',
+          helpUrl: '/admin/employees'
+        },
         { status: 404 }
       )
     }
@@ -53,7 +60,17 @@ export async function POST(request: NextRequest) {
 
     if (!matchedUser) {
       return NextResponse.json(
-        { success: false, error: 'Face not recognized. Please enroll your face first.' },
+        { 
+          success: false, 
+          error: 'Face not recognized',
+          errorCode: 'FACE_NOT_RECOGNIZED',
+          message: 'Your face was not recognized. Please ensure you have enrolled your face or try again with better lighting.',
+          details: {
+            enrolledFaces: usersWithFace.length,
+            matchThreshold: MATCH_THRESHOLD,
+            bestDistance: bestDistance.toFixed(3)
+          }
+        },
         { status: 404 }
       )
     }
@@ -110,7 +127,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error identifying user:', error)
+    logger.error('Error identifying user', error as Error)
     return NextResponse.json(
       { 
         success: false, 

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Camera, Check, X, Clock, MapPin, ArrowLeft, Home, User, Coffee, LogOut, RefreshCw, AlertCircle } from 'lucide-react'
 import { ApiClient } from '@/lib/api-client'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
 
 interface UserStatus {
@@ -54,6 +55,7 @@ export default function FaceCheckinPage() {
   const [result, setResult] = useState<ActionResult | null>(null)
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [errorCode, setErrorCode] = useState<string | null>(null)
   const [faceConfidence, setFaceConfidence] = useState<number>(0)
   const [cameraPermission, setCameraPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt')
   const [showPermissionHelper, setShowPermissionHelper] = useState(false)
@@ -62,14 +64,14 @@ export default function FaceCheckinPage() {
   useEffect(() => {
     async function loadModels() {
       try {
-        console.log('Loading face-api models...')
+        logger.info('Loading face-api models...')
         await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
         await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
         await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
         setModelsLoaded(true)
-        console.log('Models loaded successfully')
+        logger.info('Models loaded successfully')
       } catch (err) {
-        console.error('Failed to load models:', err)
+        logger.error('Failed to load models', err as Error)
         setError('Failed to load face recognition models. Please refresh the page.')
       }
     }
@@ -92,7 +94,7 @@ export default function FaceCheckinPage() {
           setCameraPermission(result.state as any)
         })
       } catch (err) {
-        console.log('Permissions API not supported')
+        logger.info('Permissions API not supported')
       }
     }
 
@@ -104,7 +106,7 @@ export default function FaceCheckinPage() {
     if (!modelsLoaded) return
 
     try {
-      console.log('Requesting camera access...')
+      logger.info('Requesting camera access...')
       setError(null)
       setShowPermissionHelper(false)
       
@@ -121,12 +123,12 @@ export default function FaceCheckinPage() {
       }
       setStream(mediaStream)
       setCameraPermission('granted')
-      console.log('Camera started')
+      logger.info('Camera started')
       
       // Auto-identify user after camera starts
       setTimeout(() => identifyUser(), 1000)
     } catch (err: any) {
-      console.error('Failed to access camera:', err)
+      logger.error('Failed to access camera', err as Error)
       setCameraPermission('denied')
       
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -163,10 +165,10 @@ export default function FaceCheckinPage() {
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude
           })
-          console.log('Location obtained')
+          logger.info('Location obtained')
         },
         (err) => {
-          console.warn('Location not available:', err)
+          logger.warn('Location not available', { error: err })
         }
       )
     }
@@ -179,17 +181,40 @@ export default function FaceCheckinPage() {
 
     setIdentifying(true)
     setError(null)
+    setErrorCode(null)
+
+    // Add overall timeout for entire identification process
+    const overallTimeout = setTimeout(() => {
+      setError('Face identification timeout. Please try again.')
+      setIdentifying(false)
+    }, 20000) // 20 second overall timeout
 
     try {
-      console.log('Identifying user...')
+      logger.info('Identifying user...')
 
-      // Detect face
-      const detection = await faceapi
+      // Check if models are loaded
+      if (!modelsLoaded) {
+        clearTimeout(overallTimeout)
+        setError('Face recognition models not loaded. Please wait...')
+        setIdentifying(false)
+        return
+      }
+
+      // Detect face with timeout
+      const detectionPromise = faceapi
         .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptor()
 
+      // Add 10 second timeout for face detection
+      const detectionTimeoutPromise = new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error('Face detection timeout. Please ensure your face is visible and well-lit.')), 10000)
+      )
+
+      const detection = await Promise.race([detectionPromise, detectionTimeoutPromise]) as any
+
       if (!detection) {
+        clearTimeout(overallTimeout)
         setError('No face detected. Please position your face clearly in the frame.')
         setIdentifying(false)
         return
@@ -197,9 +222,10 @@ export default function FaceCheckinPage() {
 
       const confidence = detection.detection.score
       setFaceConfidence(confidence)
-      console.log('Face detected with confidence:', confidence)
+      logger.info('Face detected with confidence', { confidence })
 
       if (confidence < 0.5) {
+        clearTimeout(overallTimeout)
         setError('Face detection confidence too low. Please improve lighting.')
         setIdentifying(false)
         return
@@ -207,15 +233,31 @@ export default function FaceCheckinPage() {
 
       const descriptor = Array.from(detection.descriptor)
 
-      // Identify user and get status
-      const response = await ApiClient.identifyFaceStatus({ descriptor })
+      // Identify user and get status with timeout
+      const apiTimeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Server response timeout. Please check your internet connection.')), 15000)
+      )
 
-      console.log('User identified:', response.data)
+      const response = await Promise.race([
+        ApiClient.identifyFaceStatus({ descriptor }),
+        apiTimeoutPromise
+      ])
+
+      clearTimeout(overallTimeout)
+      logger.info('User identified:', { data: response.data })
       setUserStatus(response.data)
       setError(null)
+      setErrorCode(null)
     } catch (err: any) {
-      console.error('Identification failed:', err)
-      setError(err.message || 'Failed to identify user. Please try again.')
+      clearTimeout(overallTimeout)
+      logger.error('Identification failed', err as Error)
+      
+      // Extract error details from API response
+      const errorMessage = err.message || err.error || 'Failed to identify user. Please try again.'
+      const errorCodeValue = err.errorCode || null
+      
+      setError(errorMessage)
+      setErrorCode(errorCodeValue)
     } finally {
       setIdentifying(false)
     }
@@ -228,35 +270,56 @@ export default function FaceCheckinPage() {
     setResult(null)
     setError(null)
 
-    try {
-      console.log(`Processing ${action}...`)
+    // Add overall timeout for action processing
+    const actionTimeout = setTimeout(() => {
+      setError(`${action} timeout. Please try again.`)
+      setProcessing(false)
+    }, 25000) // 25 second timeout
 
-      // Detect face
-      const detection = await faceapi
+    try {
+      logger.info(`Processing ${action}...`)
+
+      // Detect face with timeout
+      const detectionPromise = faceapi
         .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptor()
 
+      const detectionTimeoutPromise = new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error('Face detection timeout during action. Please try again.')), 10000)
+      )
+
+      const detection = await Promise.race([detectionPromise, detectionTimeoutPromise]) as any
+
       if (!detection) {
+        clearTimeout(actionTimeout)
         throw new Error('No face detected. Please position your face clearly in the frame.')
       }
 
-      console.log('Face detected with confidence:', detection.detection.score)
+      logger.info('Face detected with confidence:', { data: detection.detection.score })
 
       const descriptor = Array.from(detection.descriptor)
 
-      console.log(`Submitting ${action}...`)
+      logger.info(`Submitting ${action}...`)
 
-      // Call action API
-      const response = await ApiClient.faceAction({
-        descriptor,
-        action,
-        timestamp: new Date().toISOString(),
-        location,
-        lateExcuse: null
-      })
+      // Call action API with timeout
+      const apiTimeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Server response timeout. Please check your connection.')), 15000)
+      )
 
-      console.log('Action successful:', response)
+      const response = await Promise.race([
+        ApiClient.faceAction({
+          descriptor,
+          action,
+          timestamp: new Date().toISOString(),
+          location,
+          lateExcuse: null
+        }),
+        apiTimeoutPromise
+      ])
+
+      clearTimeout(actionTimeout)
+      logger.info('Action successful', { response })
 
       setResult({
         success: true,
@@ -297,7 +360,8 @@ export default function FaceCheckinPage() {
         setStream(null)
       }
     } catch (err: any) {
-      console.error('Action failed:', err)
+      clearTimeout(actionTimeout)
+      logger.error('Action failed', err as Error)
       setResult({
         success: false,
         message: err.message || 'Action failed',
@@ -333,7 +397,7 @@ export default function FaceCheckinPage() {
           setTimeout(() => identifyUser(), 1000)
         })
         .catch(err => {
-          console.error('Failed to restart camera:', err)
+          logger.error('Failed to restart camera', err as Error)
           setError('Failed to restart camera. Please refresh the page.')
         })
     }
@@ -476,21 +540,123 @@ export default function FaceCheckinPage() {
               </div>
             )}
 
-            {/* Error State */}
-            {error && !showPermissionHelper && !identifying && !processing && (
+            {/* Error State - No Faces Enrolled */}
+            {errorCode === 'NO_FACES_ENROLLED' && !showPermissionHelper && !identifying && !processing && (
+              <div className="bg-amber-500/10 border border-amber-500/50 rounded-lg p-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-amber-400 mb-2">No Enrolled Faces Found</h3>
+                    <p className="text-amber-300 text-sm mb-4">
+                      Face recognition is not set up yet. You need to enroll your face first before using this feature.
+                    </p>
+                    <div className="bg-amber-500/10 p-3 rounded-md mb-4">
+                      <p className="text-amber-200 text-xs font-medium mb-2">How to enroll your face:</p>
+                      <ol className="text-amber-200 text-xs space-y-1 list-decimal list-inside">
+                        <li>Go to Employee Dashboard</li>
+                        <li>Click on your profile or settings</li>
+                        <li>Look for "Enroll Face" or "Face Recognition" option</li>
+                        <li>Follow the instructions to capture your face</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => router.push('/employee/dashboard')}
+                    className="flex-1 bg-amber-600 hover:bg-amber-700"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Go to Dashboard
+                  </Button>
+                  <Button
+                    onClick={() => router.push('/')}
+                    variant="outline"
+                    className="flex-1 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+                  >
+                    <Home className="w-4 h-4 mr-2" />
+                    Manual Check-In
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Error State - Face Not Recognized */}
+            {errorCode === 'FACE_NOT_RECOGNIZED' && !showPermissionHelper && !identifying && !processing && (
+              <div className="bg-orange-500/10 border border-orange-500/50 rounded-lg p-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-6 h-6 text-orange-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-orange-400 mb-2">Face Not Recognized</h3>
+                    <p className="text-orange-300 text-sm mb-4">
+                      We couldn't match your face with any enrolled user. This could be due to:
+                    </p>
+                    <ul className="text-orange-200 text-sm space-y-2 mb-4">
+                      <li className="flex items-start gap-2">
+                        <span className="text-orange-400">•</span>
+                        <span>You haven't enrolled your face yet</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-orange-400">•</span>
+                        <span>Poor lighting conditions</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-orange-400">•</span>
+                        <span>Face angle or distance from camera</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-orange-400">•</span>
+                        <span>Wearing accessories (mask, glasses, hat)</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={identifyUser}
+                    className="flex-1 bg-orange-600 hover:bg-orange-700"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Try Again
+                  </Button>
+                  <Button
+                    onClick={() => router.push('/employee/dashboard')}
+                    variant="outline"
+                    className="flex-1 border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Enroll Face
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Error State - Other Errors */}
+            {error && !errorCode && !showPermissionHelper && !identifying && !processing && (
               <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-red-400 text-sm">{error}</p>
-                  <Button
-                    onClick={() => cameraPermission === 'denied' ? startCamera() : identifyUser()}
-                    size="sm"
-                    variant="outline"
-                    className="mt-3 border-red-500/50 text-red-400 hover:bg-red-500/10"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    {cameraPermission === 'denied' ? 'Request Camera' : 'Try Again'}
-                  </Button>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      onClick={() => cameraPermission === 'denied' ? startCamera() : identifyUser()}
+                      size="sm"
+                      variant="outline"
+                      className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      {cameraPermission === 'denied' ? 'Request Camera' : 'Try Again'}
+                    </Button>
+                    <Button
+                      onClick={() => router.push('/')}
+                      size="sm"
+                      variant="outline"
+                      className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                    >
+                      <Home className="w-4 h-4 mr-2" />
+                      Manual Check-In
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

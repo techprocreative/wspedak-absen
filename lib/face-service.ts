@@ -1,5 +1,6 @@
 import { FaceEmbedding } from '@/lib/face-recognition'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 export const faceService = {
   async enrollFace(embedding: FaceEmbedding): Promise<boolean> {
     try {
@@ -11,7 +12,7 @@ export const faceService = {
         body: JSON.stringify({
           id: embedding.id,
           userId: embedding.userId,
-          embedding: Array.from(embedding.embedding),
+          descriptor: Array.from(embedding.embedding), // Changed from 'embedding' to 'descriptor' to match API
           quality: embedding.metadata?.quality,
           metadata: embedding.metadata,
         }),
@@ -19,7 +20,7 @@ export const faceService = {
       const data = await res.json()
       return !!data?.success
     } catch (e) {
-      console.error('enrollFace error:', e)
+      logger.error('enrollFace error', e as Error)
       return false
     }
   },
