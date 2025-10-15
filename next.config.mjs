@@ -9,6 +9,20 @@ const nextConfig = {
     // Re-enable after full cleanup: ignoreBuildErrors: false
     ignoreBuildErrors: true,
   },
+  // Webpack configuration to fix TensorFlow.js / face-api.js issues
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Don't resolve these modules on the client-side (browser)
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        encoding: false,
+        fs: false,
+        net: false,
+        tls: false,
+      }
+    }
+    return config
+  },
   images: {
     // Optimize images in production for better LCP; keep unoptimized in dev for speed
     unoptimized: process.env.NODE_ENV !== 'production',

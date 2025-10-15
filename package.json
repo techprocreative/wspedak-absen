@@ -122,5 +122,8 @@
     "ts-jest": "^29.1.1",
     "tw-animate-css": "1.3.3",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "encoding": "^0.1.13"
   }
 }
