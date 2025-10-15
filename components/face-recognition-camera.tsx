@@ -130,9 +130,17 @@ export function FaceRecognitionCamera({
           })
         }
         
-        // Load face API models
-        await faceAPI.loadModels()
-        setIsModelLoaded(true)
+        // Load face API models in background (non-blocking)
+        logger.info('Starting model loading in background...')
+        faceAPI.loadModels()
+          .then(() => {
+            setIsModelLoaded(true)
+            logger.info('Models loaded successfully')
+          })
+          .catch(err => {
+            logger.error('Failed to load models', err as Error)
+            setError("Failed to load face recognition models. Please refresh.")
+          })
         
         // Load known faces from storage if in verification mode
         if (mode === "verification") {
@@ -172,7 +180,14 @@ export function FaceRecognitionCamera({
   }, [])
 
   const capturePhoto = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || !isModelLoaded) return
+    if (!videoRef.current || !canvasRef.current) return
+    
+    // Wait for models if not loaded yet
+    if (!isModelLoaded) {
+      setError("Face detection models still loading... Please wait a moment.")
+      logger.warn('Capture attempted before models loaded')
+      return
+    }
 
     const canvas = canvasRef.current
     const video = videoRef.current
@@ -360,7 +375,13 @@ export function FaceRecognitionCamera({
             <div className="text-center text-slate-400">
               <Camera className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p>Kamera belum aktif</p>
-              {enableHardwareOptimizations && (
+              {!isModelLoaded && (
+                <div className="mt-2">
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1" />
+                  <p className="text-xs text-slate-500">Loading face detection models...</p>
+                </div>
+              )}
+              {enableHardwareOptimizations && isModelLoaded && (
                 <p className="text-xs mt-2">Hardware optimizations enabled</p>
               )}
             </div>
