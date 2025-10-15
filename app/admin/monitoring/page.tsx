@@ -5,7 +5,6 @@
 
 export const dynamic = 'force-dynamic'
 
-import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,11 +23,6 @@ import {
   Shield,
   TrendingUp
 } from 'lucide-react';
-
-export const metadata: Metadata = {
-  title: 'System Monitoring',
-  description: 'Real-time system monitoring and alerts',
-};
 
 function LoadingSpinner() {
   return (

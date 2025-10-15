@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    // Do not fail production builds on lint errors
+    // Ignore ESLint errors during builds to allow deployment
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Do not block production builds on type errors
+    // Temporarily disable type checking during build (too many stub files causing issues)
+    // Re-enable after full cleanup: ignoreBuildErrors: false
     ignoreBuildErrors: true,
   },
   images: {
@@ -66,13 +67,23 @@ const nextConfig = {
   devIndicators: {
     buildActivityPosition: 'bottom-right',
   },
-  // Environment variables that should be available to the client
+  // Skip error pages export to avoid <Html> import issues
+  exportPathMap: async function (
+    defaultPathMap,
+    { dev, dir, outDir, distDir, buildId }
+  ) {
+    const pathMap = { ...defaultPathMap }
+    // Remove error pages from static export
+    delete pathMap['/404']
+    delete pathMap['/500']
+    delete pathMap['/_error']
+    return pathMap
+  },
+  // Only expose truly necessary environment variables to the client
+  // NEVER expose secrets, passwords, or service keys
   env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
+    // Remove in production - only for demo purposes
     ALLOW_DEMO_CREDENTIALS: process.env.ALLOW_DEMO_CREDENTIALS,
-    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
-    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
-    NEXT_PUBLIC_ADMIN_EMAIL: process.env.NEXT_PUBLIC_ADMIN_EMAIL,
   },
 }
 

@@ -3,10 +3,12 @@
  * Comprehensive alert management dashboard
  */
 
+'use client'
+
 export const dynamic = 'force-dynamic'
 
-import { Metadata } from 'next';
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,13 +21,12 @@ import {
   CheckCircle,
   XCircle,
   Activity,
-  Filter
+  Filter,
+  RefreshCw,
+  Shield
 } from 'lucide-react';
-
-export const metadata: Metadata = {
-  title: 'Alert Management',
-  description: 'Manage and respond to system alerts',
-};
+import { ApiClient } from '@/lib/api-client';
+import { logger } from '@/lib/logger';
 
 function LoadingSpinner() {
   return (
