@@ -30,27 +30,45 @@ export function FaceEnrollmentModal({
   const [capturing, setCapturing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [loadingProgress, setLoadingProgress] = useState<string>('Initializing...')
 
-  // Load face-api.js models (parallel loading)
+  // Load face-api.js models with timeout for mobile
   useEffect(() => {
     async function loadModels() {
       if (!isOpen) return
       
       try {
-        logger.info('Loading face-api models...')
+        logger.info('Loading face-api models for enrollment...')
+        setLoadingProgress('Loading AI models...')
+        
+        // Detect mobile device
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+        const timeoutDuration = isMobile ? 40000 : 30000 // 40s for mobile, 30s for desktop
+        
+        setLoadingProgress(isMobile ? 'Loading models (may take 10-30s on mobile)...' : 'Loading models...')
+        
+        // Create timeout promise
+        const timeout = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Model loading timeout. Please check your internet connection and try again.')), timeoutDuration)
+        )
         
         // Load all models in parallel for faster loading
-        await Promise.all([
+        const loadPromise = Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
           faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
           faceapi.nets.faceRecognitionNet.loadFromUri('/models')
         ])
         
+        // Race between loading and timeout
+        await Promise.race([loadPromise, timeout])
+        
         setModelsLoaded(true)
-        logger.info('✅ Models loaded successfully')
+        setLoadingProgress('Models loaded! Starting camera...')
+        logger.info('✅ Models loaded successfully for enrollment')
       } catch (err) {
         logger.error('Failed to load models', err as Error)
-        setError('Failed to load face recognition models. Please refresh and try again.')
+        const errorMsg = err instanceof Error ? err.message : 'Failed to load face recognition models'
+        setError(errorMsg + ' Please refresh and try again.')
       }
     }
     
@@ -244,21 +262,40 @@ export function FaceEnrollmentModal({
               </div>
               <div>
                 <p className="text-lg font-semibold mb-2">Loading Face Recognition</p>
-                <p className="text-sm text-muted-foreground">Preparing AI models for enrollment...</p>
+                <p className="text-sm text-muted-foreground">{loadingProgress}</p>
                 <div className="mt-4 w-48 mx-auto bg-gray-200 rounded-full h-2 overflow-hidden">
                   <div className="h-full bg-primary animate-pulse" style={{ width: '75%' }}></div>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Please wait, do not close this dialog
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {/* Camera Starting State */}
+          {modelsLoaded && !stream && !error && !success && (
+            <div className="text-center py-12 space-y-4">
+              <div className="relative">
+                <div className="animate-pulse rounded-full h-16 w-16 bg-gray-200 mx-auto flex items-center justify-center">
+                  <Camera className="w-8 h-8 text-primary" />
+                </div>
+              </div>
+              <div>
+                <p className="text-lg font-semibold mb-2">Starting Camera</p>
+                <p className="text-sm text-muted-foreground">Please allow camera access when prompted...</p>
               </div>
             </div>
           )}
 
-          {modelsLoaded && !success && (
+          {modelsLoaded && stream && !success && (
             <>
               <div className="relative bg-black rounded-lg overflow-hidden">
                 <video 
                   ref={videoRef} 
                   autoPlay 
                   playsInline
+                  muted
                   className="w-full h-auto transform scale-x-[-1]"
                   style={{ transform: 'scaleX(-1)' }}
                 />
