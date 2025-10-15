@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verify } from 'jsonwebtoken'
 import { serverDbManager } from './server-db'
 
+import { logger, logApiError, logApiRequest } from '@/lib/logger'
 interface DecodedToken {
   userId: string
   email: string
@@ -33,7 +34,24 @@ function getTokenFromRequest(request: NextRequest): string | null {
     return authHeader.substring(7)
   }
   
-  // Try to get from cookie
+  // Try to get from cookie - check admin_session first (primary)
+  const adminSessionCookie = request.cookies.get('admin_session')
+  if (adminSessionCookie) {
+    return adminSessionCookie.value
+  }
+  
+  // Fallback to legacy auth_session cookie
+  const authSessionCookie = request.cookies.get('auth_session')
+  if (authSessionCookie) {
+    try {
+      const session = JSON.parse(authSessionCookie.value)
+      return session.sessionToken || null
+    } catch {
+      // Invalid JSON, ignore
+    }
+  }
+  
+  // Fallback to session-token (for backward compatibility)
   const tokenCookie = request.cookies.get('session-token')
   if (tokenCookie) {
     return tokenCookie.value
@@ -43,11 +61,69 @@ function getTokenFromRequest(request: NextRequest): string | null {
 }
 
 /**
+ * Verify signed admin session cookie (HMAC-SHA256)
+ */
+function verifySignedCookie(cookieValue: string, secret: string): DecodedToken | null {
+  try {
+    const crypto = require('crypto')
+    const [payloadPart, signaturePart] = cookieValue.split('.')
+    
+    if (!payloadPart || !signaturePart) {
+      return null
+    }
+    
+    // Verify signature
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(payloadPart)
+      .digest('base64url')
+    
+    if (expected !== signaturePart) {
+      return null
+    }
+    
+    // Decode payload
+    const payloadJson = Buffer.from(payloadPart, 'base64url').toString('utf8')
+    const payload = JSON.parse(payloadJson)
+    
+    // Check expiration
+    if (payload.exp && Date.now() > payload.exp) {
+      return null
+    }
+    
+    // Return decoded token format
+    if (payload.user) {
+      return {
+        userId: payload.user.id,
+        email: payload.user.email,
+        role: payload.user.role,
+        iat: payload.iat || Math.floor(Date.now() / 1000),
+        exp: payload.exp || Math.floor(Date.now() / 1000) + 3600
+      }
+    }
+    
+    return null
+  } catch (error) {
+    return null
+  }
+}
+
+/**
  * Verify JWT token (Supabase or custom)
  */
 async function verifyToken(token: string): Promise<DecodedToken | null> {
   try {
-    // First try to verify with Supabase
+    const secret = process.env.SESSION_SECRET || process.env.JWT_SECRET || ''
+    
+    // First, try to verify as signed cookie (admin_session format)
+    if (token.includes('.') && secret) {
+      const decoded = verifySignedCookie(token, secret)
+      if (decoded) {
+        return decoded
+      }
+    }
+    
+    // Try to verify with Supabase
     const { createClient } = await import('@supabase/supabase-js')
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -79,7 +155,7 @@ async function verifyToken(token: string): Promise<DecodedToken | null> {
     
     return null
   } catch (error) {
-    console.error('Token verification failed:', error)
+    logger.error('Token verification failed', error as Error)
     return null
   }
 }
